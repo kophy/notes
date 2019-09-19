@@ -1,0 +1,16 @@
+site_name: kophy's notes
+repo_url: https://github.com/kophy/notes
+
+extra_javascript:
+    - 'https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML'
+
+markdown_extensions:
+    - mdx_math
+
+pages:
+    - Home: 'index.md'
+    - System:
+      - zfs: 'zfs/zfs.md'
+      - bigtable: 'bigtable/bigtable.md'
+    - ML:
+      - word2vec: 'word2vec/word2vec.md'
