@@ -89,58 +89,66 @@ if (is_top_frame) { $('body').addClass('wm-top-page'); }
 <h2 id="data-model">Data Model</h2>
 <p><img alt="data-model" src="../images/data-model.jpg" /></p>
 <ul>
-<li>Rows</li>
+<li>Rows<ul>
 <li>read/write under a row key is atomic</li>
 <li>row keys are in lexicographic order</li>
 <li>tablet(row range) is unit of distribution and load balancing</li>
-<li>Column families</li>
+</ul>
+</li>
+<li>Column families<ul>
 <li>basic unit of access control</li>
 <li>column family number is small and rarely change, while column number is unbounded</li>
+</ul>
+</li>
 </ul>
 <h2 id="implementation">Implementation</h2>
 <ul>
 <li>
 <p>Tablet Location</p>
-</li>
-<li>
-<p>three-level hierarchy: Chubby file for root tablet, METADATA tablets, user table</p>
-</li>
+<ul>
+<li>three-level hierarchy: Chubby file for root tablet, METADATA tablets, user table</li>
 <li>client library caches tablet location(search recursively if cache is invalid)</li>
 </ul>
 <p><img alt="tablet location" src="../images/tablet-location.jpg" /></p>
+</li>
+</ul>
 <ul>
 <li>
 <p>Tablet Assignment</p>
+<ul>
+<li>tablet server creates file in Chubby directory; master monitors the directory to discover tablet server</li>
+<li>when master starts, it creates file in Chubby directory, communicates with live tablet servers and scans METADATA table</li>
+</ul>
 </li>
-<li>
-<p>tablet server creates file in Chubby directory; master monitors the directory to discover tablet server</p>
-</li>
-<li>
-<p>when master starts, it creates file in Chubby directory, communicates with live tablet servers and scans METADATA table</p>
-</li>
+</ul>
+<ul>
 <li>
 <p>Tablet Serving</p>
-</li>
-<li>
-<p>updates: commit log -&gt; memtable -&gt; SSTables</p>
-</li>
+<ul>
+<li>updates: commit log -&gt; memtable -&gt; SSTables</li>
 <li>METADATA table stores metadata to recover a tablet(SSTables and redo points)</li>
+</ul>
+</li>
 </ul>
 <p><img alt="tablet inside" src="../images/tablet-inside.jpg" /></p>
 <ul>
-<li>Compaction</li>
+<li>Compaction<ul>
 <li>minor compaction: when memtable size reaches threshold, convert current memtable into a SSTable and make a new one</li>
 <li>merging compaction: periodically merges a few SSTables and memtable into a SSTable</li>
 <li>major compaction: merges all SSTables into a SSTable(no deletion entry)</li>
+</ul>
+</li>
 </ul>
 <h2 id="refinements">Refinements</h2>
 <ul>
 <li>locality groups: group multiple column families into locality group; seprate locality groups into different SSTables</li>
 <li>compression</li>
 <li>bloom filter</li>
-<li>commit-log</li>
+<li>commit-log<ul>
 <li>use single commit log per tablet server, co-mingling mutations for different tablets</li>
 <li>For recovery, the commit log is sorted first, so new tablet server doesn't need to read full log file</li>
+</ul>
+</li>
 </ul>
 
   <br>
