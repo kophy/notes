@@ -8,12 +8,16 @@ extra_javascript:
     - 'https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML'
 
 markdown_extensions:
-    - mdx_math
+    - mdx_math:
+        enable_dollar_delimiter: True
+    - mdx_truly_sane_lists
 
 pages:
     - Home: 'index.md'
-    - System:
-      - zfs: 'zfs/zfs.md'
+    - Google:
       - bigtable: 'bigtable/bigtable.md'
+      - flume: 'flume/flume.md'
     - ML:
       - word2vec: 'word2vec/word2vec.md'
+    - Miscellaneous:
+      - zfs: 'zfs/zfs.md'

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  
+  
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    
+    
+    <link rel="shortcut icon" href="../../img/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+    <title>flume - kophy's notes</title>
+    <link href="../../css/bootstrap-3.3.7.min.css" rel="stylesheet">
+    <link href="../../css/font-awesome-4.7.0.css" rel="stylesheet">
+    <link href="../../css/base.css" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/highlight.css">
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+    <![endif]-->
+
+    <script src="../../js/jquery-3.2.1.min.js"></script>
+    <script src="../../js/bootstrap-3.3.7.min.js"></script>
+    <script src="../../js/highlight.pack.js"></script>
+    
+    <base target="_top">
+    <script>
+      var base_url = '../..';
+      var is_top_frame = false;
+        
+        var pageToc = [
+          {title: "FlumeJava: Easy, Efficient Data-Parallel Pipelines", url: "#_top", children: [
+              {title: "VS MapReduce", url: "#vs-mapreduce" },
+              {title: "Basics", url: "#basics" },
+              {title: "Optimizer", url: "#optimizer" },
+              {title: "Executor", url: "#executor" },
+          ]},
+        ];
+
+    </script>
+    <script src="../../js/base.js"></script>
+      <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script> 
+</head>
+
+<body>
+<script>
+if (is_top_frame) { $('body').addClass('wm-top-page'); }
+</script>
+
+
+
+<div class="container-fluid wm-page-content">
+  <a name="_top"></a>
+    
+
+    
+    
+      
+    
+
+  <div class="row wm-article-nav-buttons" role="navigation" aria-label="navigation">
+    
+    <div class="wm-article-nav pull-right">
+      <a href="../../word2vec/word2vec/" class="btn btn-xs btn-default pull-right">
+        Next
+        <i class="fa fa-chevron-right" aria-hidden="true"></i>
+      </a>
+      <a href="../../word2vec/word2vec/" class="btn btn-xs btn-link">
+        word2vec
+      </a>
+    </div>
+    
+    <div class="wm-article-nav">
+      <a href="../../bigtable/bigtable/" class="btn btn-xs btn-default pull-left">
+        <i class="fa fa-chevron-left" aria-hidden="true"></i>
+        Previous</a><a href="../../bigtable/bigtable/" class="btn btn-xs btn-link">
+        bigtable
+      </a>
+    </div>
+    
+  </div>
+
+    
+
+    <h1 id="flumejava-easy-efficient-data-parallel-pipelines">FlumeJava: Easy, Efficient Data-Parallel Pipelines</h1>
+<p><em>The combination of high-level abstractions for parallel data and computation, deferred evaluation and optimization, and efficient parallel primitives yields an easy-to-use system that approaches the efficiency of hand-optimized pipelines.</em></p>
+<h2 id="vs-mapreduce">VS MapReduce</h2>
+<ul>
+<li>Real-life computations require a chain of MapReduce stages. FlumeJava can optimize the execution plan and choose implementation strategy(local loop, remote MapReduce, etc) when running the execution plan.</li>
+<li>FlumeJava is easier to develop and test. Parallel collections abstract away the details of data representation and parallel operations abstract away the implementation strategy.</li>
+<li>FlumeJava automatically deletes temporary intermediate files when no longer needed.</li>
+</ul>
+<h2 id="basics">Basics</h2>
+<ul>
+<li>Data:<ul>
+<li>immutable bag of elements <code>PCollection&lt;T&gt;</code>.</li>
+<li>immutable multi-map <code>PTable&lt;K, V&gt;</code>.</li>
+</ul>
+</li>
+<li>Operations:<ul>
+<li><code>parallelDo</code> for map/reduce.</li>
+<li><code>groupByKey</code> for shuffle.</li>
+<li><code>combineValues</code> is a special case of <code>parallelDo</code>. It is more efficient since MapReduce combiner is allowed.</li>
+<li><code>flatten</code> views a list of <code>PCollection&lt;T&gt;</code> as a single <code>PCollection&lt;T&gt;</code>(no copy).</li>
+<li><code>join</code> returns <code>PTable&lt;K, Tuple&lt;Collection&lt;V1&gt;, Collection&lt;V2&gt;&gt;&gt;</code> and is implemented with intermediate type <code>PTable&lt;K, TaggedUnion2&lt;V1, V2&gt;&gt;</code>.</li>
+</ul>
+</li>
+</ul>
+<h2 id="optimizer">Optimizer</h2>
+<h3 id="paralleldo-fusion">ParallelDo Fusion</h3>
+<ul>
+<li>Producer-consumer fusion: replace <script type="math/tex">f(g(x))</script> with <script type="math/tex">(g + f \circ g)(x)</script>.</li>
+<li>Sibling fusion: replace <script type="math/tex">f(x) + g(x)</script> with <script type="math/tex">(f+g)(x)</script>.</li>
+</ul>
+<h3 id="mscr-fusion">MSCR Fusion</h3>
+<p>MSCR(MapShuffleCombineReduce) operation is the intermediate operation to help bridge the gap between(1) combinations of operations and (2) single MapReduces.</p>
+<p><img alt="MSCR" src="../images/MSCR.jpg" /></p>
+<h3 id="strategy">Strategy</h3>
+<p>The optimizers performs multiple passes over the execution plan to produce the fewest, most efficient MSCR operations.</p>
+<ol>
+<li>Sink Flattens: create opportunities for ParallelDo fusion.</li>
+<li>Lift CombineValues operations: CombineValues immediately follows GroupByKey is subject to ParallelDo fusion.</li>
+<li>Insert fusion blocks: for ParallelDos between two GroupByKeys, FlumeJava needs to estimate size of intermediate output and mark boundary to block ParallelDo fusion.</li>
+<li>Fuse ParallelDos.</li>
+<li>Fuse MSCRs.</li>
+</ol>
+<h2 id="executor">Executor</h2>
+<p>Batch execution: FlumeJava traverses the operations in the execution plan in forward topological order.Independent operations are operated simultaneously.</p>
+
+  <br>
+    
+
+    
+    
+      
+    
+
+  <div class="row wm-article-nav-buttons" role="navigation" aria-label="navigation">
+    
+    <div class="wm-article-nav pull-right">
+      <a href="../../word2vec/word2vec/" class="btn btn-xs btn-default pull-right">
+        Next
+        <i class="fa fa-chevron-right" aria-hidden="true"></i>
+      </a>
+      <a href="../../word2vec/word2vec/" class="btn btn-xs btn-link">
+        word2vec
+      </a>
+    </div>
+    
+    <div class="wm-article-nav">
+      <a href="../../bigtable/bigtable/" class="btn btn-xs btn-default pull-left">
+        <i class="fa fa-chevron-left" aria-hidden="true"></i>
+        Previous</a><a href="../../bigtable/bigtable/" class="btn btn-xs btn-link">
+        bigtable
+      </a>
+    </div>
+    
+  </div>
+
+    <br>
+</div>
+
+<footer class="col-md-12 wm-page-content">
+      <p>
+        <a href="https://github.com/kophy/notes/edit/master/docs/flume/flume.md"><i class="fa fa-github"></i>
+Edit on GitHub</a>
+      </p>
+  <p>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a> using <a href="https://github.com/gristlabs/mkdocs-windmill">Windmill</a> theme by Grist Labs.</p>
+</footer>
+
+</body>
+</html>
