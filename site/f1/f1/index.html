@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  
+  
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    
+    
+    <link rel="shortcut icon" href="../../img/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+    <title>f1 - kophy's notes</title>
+    <link href="../../css/bootstrap-3.3.7.min.css" rel="stylesheet">
+    <link href="../../css/font-awesome-4.7.0.css" rel="stylesheet">
+    <link href="../../css/base.css" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/highlight.css">
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+    <![endif]-->
+
+    <script src="../../js/jquery-3.2.1.min.js"></script>
+    <script src="../../js/bootstrap-3.3.7.min.js"></script>
+    <script src="../../js/highlight.pack.js"></script>
+    
+    <base target="_top">
+    <script>
+      var base_url = '../..';
+      var is_top_frame = false;
+        
+        var pageToc = [
+          {title: "F1: A Distributed SQL Database That Scales", url: "#_top", children: [
+              {title: "Basics", url: "#basics" },
+              {title: "Architecture", url: "#architecture" },
+              {title: "Features", url: "#features" },
+              {title: "Query Processing", url: "#query-processing" },
+          ]},
+        ];
+
+    </script>
+    <script src="../../js/base.js"></script>
+      <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script> 
+</head>
+
+<body>
+<script>
+if (is_top_frame) { $('body').addClass('wm-top-page'); }
+</script>
+
+
+
+<div class="container-fluid wm-page-content">
+  <a name="_top"></a>
+    
+
+    
+    
+      
+    
+
+  <div class="row wm-article-nav-buttons" role="navigation" aria-label="navigation">
+    
+    <div class="wm-article-nav pull-right">
+      <a href="../../flume/flume/" class="btn btn-xs btn-default pull-right">
+        Next
+        <i class="fa fa-chevron-right" aria-hidden="true"></i>
+      </a>
+      <a href="../../flume/flume/" class="btn btn-xs btn-link">
+        flume
+      </a>
+    </div>
+    
+    <div class="wm-article-nav">
+      <a href="../../bigtable/bigtable/" class="btn btn-xs btn-default pull-left">
+        <i class="fa fa-chevron-left" aria-hidden="true"></i>
+        Previous</a><a href="../../bigtable/bigtable/" class="btn btn-xs btn-link">
+        bigtable
+      </a>
+    </div>
+    
+  </div>
+
+    
+
+    <h1 id="f1-a-distributed-sql-database-that-scales">F1: A Distributed SQL Database That Scales</h1>
+<p><em>A hybrid database that combines high availability, the scalability of NoSQL and consistency of traditional SQL.</em></p>
+<h2 id="basics">Basics</h2>
+<ul>
+<li>MySQL can't to meet scalability and reliability requirements as it is hard to scale up and rebalance.</li>
+<li>F1 is built on Spanner, which provides scalable data storage, synchronous replication, strong consistency and ordering properties.</li>
+<li>F1 has higher latency for typical reads and writes, so many techniques(even a new ORM layer) are used to hide the latency.</li>
+</ul>
+<h2 id="architecture">Architecture</h2>
+<ul>
+<li>F1 servers are typically co-located in the datacenters as the Spanner servers storing the data.</li>
+<li>F1 servers can communicate with Spanner servers outside their own datacenters for availability and load balancing.</li>
+<li>Shared slave pool consists of F1 processes to execute distributed query plans.</li>
+<li>F1 master monitors slave process health and distributes the list of available slaves to F1 servers.</li>
+</ul>
+<p><img alt="architecture" src="../images/architecture.jpg" /></p>
+<h2 id="features">Features</h2>
+<h3 id="hierarchical-schema">Hierarchical Schema</h3>
+<ul>
+<li>Logically, tables in the F1 schema can be organized into a hierarchy. Physically, F1 stores each child table clustered with and interleaved within the rows from its parent table(the child table must have a foreign key to its parent table as a prefix of its primary key).</li>
+<li>Reading all AdGroups for a Customer can be expressed as a single range read.</li>
+<li>Hierarchical clustering is useful for updates since it reduces the number of Spanner groups involved in a transaction.</li>
+<li>Flat schema is possible, but hierarchy matching data semantics is beneficial(most transactions update data for a single advertiser).</li>
+</ul>
+<p><img alt="schema" src="../images/schema.jpg" /></p>
+<h3 id="non-blocking-schema-changes">Non-blocking Schema Changes</h3>
+<p>A schema change algorithm that:</p>
+<ul>
+<li>Enforcing across all F1 servers, at most twoschemas("current" and "next") are active.</li>
+<li>Dividing schema change into multiple phases where consecutive pair of phases are compatible and cannot cause anomalies.</li>
+</ul>
+<h3 id="optimistic-transaction">Optimistic Transaction</h3>
+<ul>
+<li>F1 implements three types of transactions:<ul>
+<li>snapshot(read-only).</li>
+<li>pessimistic(Spanner transaction that requires lock).</li>
+<li>optimistic(arbitrary long read phase without lock + short write phase with lock).</li>
+</ul>
+</li>
+<li>Benefits: tolerating misbehaved clients, long-lasting transactions, server-side retriability, server failover, speculative writes.</li>
+<li>Drawbacks: insertion phantoms, low throughput under high contentions.</li>
+</ul>
+<h3 id="change-history">Change History</h3>
+<ul>
+<li>Every transaction creates ChangeBatch protocol buffers and they are written to change history tables that exist as children of root tables.</li>
+<li>Change History can be used to trigger incremental processing when root rows change or update cache.</li>
+</ul>
+<h2 id="query-processing">Query Processing</h2>
+<ul>
+<li>F1 supports both centralized and distributed execution of queries.<ul>
+<li>Centralized execution is for OLTP queries and runs on one F1 server.</li>
+<li>Distributed execution is for OLAP queries and spreads workload in the slave pool.</li>
+</ul>
+</li>
+<li>F1 mainly uses remote data source, so it optimizes to reduce network latency with batching or pipelining data access(example: Lookup Join operator), while traditional database optimizes to reduce disk latency.</li>
+<li>F1 operators stream data as much as possible at the cost of not preserving data orders.</li>
+<li>F1 uses only hash partitioning. Range partitioning is infeasible because Spanner applies random partitioning.</li>
+<li>F1 operators execute in memory without checkpointing to disk, so queries run fast but will fail when any part fails(transparent retry hides these failures).</li>
+<li>Protocol buffers have performance implications since we have to fetch and parse entire message even when using a subset of fields.</li>
+</ul>
+
+  <br>
+    
+
+    
+    
+      
+    
+
+  <div class="row wm-article-nav-buttons" role="navigation" aria-label="navigation">
+    
+    <div class="wm-article-nav pull-right">
+      <a href="../../flume/flume/" class="btn btn-xs btn-default pull-right">
+        Next
+        <i class="fa fa-chevron-right" aria-hidden="true"></i>
+      </a>
+      <a href="../../flume/flume/" class="btn btn-xs btn-link">
+        flume
+      </a>
+    </div>
+    
+    <div class="wm-article-nav">
+      <a href="../../bigtable/bigtable/" class="btn btn-xs btn-default pull-left">
+        <i class="fa fa-chevron-left" aria-hidden="true"></i>
+        Previous</a><a href="../../bigtable/bigtable/" class="btn btn-xs btn-link">
+        bigtable
+      </a>
+    </div>
+    
+  </div>
+
+    <br>
+</div>
+
+<footer class="col-md-12 wm-page-content">
+      <p>
+        <a href="https://github.com/kophy/notes/edit/master/docs/f1/f1.md"><i class="fa fa-github"></i>
+Edit on GitHub</a>
+      </p>
+  <p>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a> using <a href="https://github.com/gristlabs/mkdocs-windmill">Windmill</a> theme by Grist Labs.</p>
+</footer>
+
+</body>
+</html>

@@ -16,6 +16,7 @@ pages:
     - Home: 'index.md'
     - Google:
       - bigtable: 'bigtable/bigtable.md'
+      - f1: 'f1/f1.md'
       - flume: 'flume/flume.md'
     - ML:
       - word2vec: 'word2vec/word2vec.md'
