@@ -2,7 +2,7 @@ site_name: kophy's notes
 repo_url: https://github.com/kophy/notes
 
 theme:
-  name: 'windmill'
+  name: 'flatly'
 
 extra_javascript:
     - 'https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML'
@@ -18,6 +18,8 @@ pages:
       - bigtable: 'bigtable/bigtable.md'
       - f1: 'f1/f1.md'
       - flume: 'flume/flume.md'
+    - Yahoo:
+      - zookeeper: 'zookeeper/zookeeper.md'
     - ML:
       - word2vec: 'word2vec/word2vec.md'
     - Miscellaneous:
