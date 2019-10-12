@@ -14,13 +14,16 @@ markdown_extensions:
 
 pages:
     - Home: 'index.md'
-    - Google:
-      - bigtable: 'bigtable/bigtable.md'
-      - f1: 'f1/f1.md'
-      - flume: 'flume/flume.md'
-    - Yahoo:
-      - zookeeper: 'zookeeper/zookeeper.md'
-    - ML:
-      - word2vec: 'word2vec/word2vec.md'
-    - Miscellaneous:
-      - zfs: 'zfs/zfs.md'
+    - System:
+      - Storage:
+        - bigtable: 'bigtable/bigtable.md'
+        - f1: 'f1/f1.md'
+      - Batch:
+        - flume: 'flume/flume.md'
+      - Cluster:
+        - zookeeper: 'zookeeper/zookeeper.md'
+      - Low-level:
+        - zfs: 'zfs/zfs.md'
+    - Machine Learning:
+      - Embedding:
+        - word2vec: 'word2vec/word2vec.md'
