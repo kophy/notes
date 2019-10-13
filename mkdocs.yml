@@ -20,6 +20,8 @@ pages:
         - f1: 'f1/f1.md'
       - Batch:
         - flume: 'flume/flume.md'
+      - Streaming:
+        - storm: 'storm/storm.md'
       - Cluster:
         - zookeeper: 'zookeeper/zookeeper.md'
       - Low-level:
