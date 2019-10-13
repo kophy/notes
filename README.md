@@ -7,3 +7,4 @@ Notes of papers (mainly about system design and machine learning).
 - **FlumeJava**: Easy, Efficient Data-Parallel Pipelines (2019/09/22)
 - **F1**: A Distributed SQL Database That Scales (2019/09/29)  
 - **ZooKeeper**: Wait-free coordination for Internet-scale systems (2019/10/06)
+- **Storm @Twitter**: (2019/10/12)
