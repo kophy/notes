@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../../img/favicon.ico">
-        <title>zookeeper - kophy's notes</title>
+        <title>borg - kophy's notes</title>
         <link href="../../css/bootstrap-custom.min.css" rel="stylesheet">
         <link href="../../css/font-awesome.min.css" rel="stylesheet">
         <link href="../../css/base.css" rel="stylesheet">
@@ -85,12 +85,12 @@
     <a href="#">Cluster Management</a>
     <ul class="dropdown-menu">
             
-<li >
-    <a href="../../borg/borg/">borg</a>
+<li class="active">
+    <a href="./">borg</a>
 </li>
             
-<li class="active">
-    <a href="./">zookeeper</a>
+<li >
+    <a href="../../zookeeper/zookeeper/">zookeeper</a>
 </li>
     </ul>
   </li>
@@ -130,17 +130,17 @@
                             </a>
                         </li>
                             <li >
-                                <a rel="next" href="../../borg/borg/">
+                                <a rel="next" href="../../storm/storm/">
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
                             <li >
-                                <a rel="prev" href="../../zfs/zfs/">
+                                <a rel="prev" href="../../zookeeper/zookeeper/">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
                             <li>
-                                <a href="https://github.com/kophy/Notes/edit/master/docs/zookeeper/zookeeper.md"><i class="fa fa-github"></i> Edit on GitHub</a>
+                                <a href="https://github.com/kophy/Notes/edit/master/docs/borg/borg.md"><i class="fa fa-github"></i> Edit on GitHub</a>
                             </li>
                     </ul>
                 </div>
@@ -150,47 +150,21 @@
         <div class="container">
                 <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
-        <li class="main active"><a href="#zookeeper-wait-free-coordination-for-internet-scale-systems">ZooKeeper: Wait-free coordination for Internet-scale systems</a></li>
+        <li class="main active"><a href="#large-scale-cluster-management-at-google-with-borg">Large-scale cluster management at Google with Borg</a></li>
             <li><a href="#basics">Basics</a></li>
-            <li><a href="#service-overview">Service Overview</a></li>
-            <li><a href="#implementation">Implementation</a></li>
+            <li><a href="#architecture">Architecture</a></li>
+            <li><a href="#availability">Availability</a></li>
+            <li><a href="#utilization">Utilization</a></li>
     </ul>
 </div></div>
                 <div class="col-md-9" role="main">
 
-<h1 id="zookeeper-wait-free-coordination-for-internet-scale-systems">ZooKeeper: Wait-free coordination for Internet-scale systems</h1>
-<p><em>A service for coordinating processes of distributed applications.</em></p>
+<h1 id="large-scale-cluster-management-at-google-with-borg">Large-scale cluster management at Google with Borg</h1>
+<p><em>A cluster manager runs hundreds of thousands of jobs across a number of clusters and achieves high availability and utilization.</em></p>
 <h2 id="basics">Basics</h2>
-<ul>
-<li>ZooKeeper provides a coordination kernel for clients to implement primitives for configuration, group membership, leader election and distributed lock.</li>
-<li>ZooKeeper implements non-blocking API, so a client can have multiple outstanding operations at a time.</li>
-<li>ZooKeeper guarantees FIFO client ordering for all operations and linearizable writes.</li>
-<li>ZooKeeper target workload read to write ration is 2:1 to 100:1.</li>
-</ul>
-<h2 id="service-overview">Service Overview</h2>
-<h3 id="znode">znode</h3>
-<ul>
-<li>ZooKeeper provides the abstraction of a set of data nodes(znodes) organized by hierarchical namespaces.</li>
-<li>znodes are in-memory data node stored in ZooKeeper. A znode can be regular or ephemeral(automatically removed when corresponding session terminates).</li>
-<li>znodes are not for general data storage. Instead, they are used to store metadata or configuration of applications(typically 1MB).</li>
-</ul>
-<p><img alt="znode" src="../images/znode.jpg" /></p>
-<h3 id="client-api">Client API</h3>
-<ul>
-<li>ZooKeeper provides API for client to manipulating znodes like in a file system.</li>
-<li>For read methods, ZooKeeper implements watches to allow client to receive notification of changes.  Watches are one-time triggers associated with a session(for example, <code>getData(path, watch)</code>).</li>
-<li>For write methods, ZooKeeper accepts an optional expected version number(for example, <code>setData(path, data, version)</code>). If set, the write succeeds only if the actual version number of znode matches the expected one.</li>
-<li>ZooKeeper client maintains session with ZooKeeper through heartbeat messages.</li>
-</ul>
-<h2 id="implementation">Implementation</h2>
-<ul>
-<li>ZooKeeper service comprises an ensemble of servers that each has replicated ZooKeeper data. One is leader and the rest are followers.</li>
-<li>Read requests are handled locally at each server, so it may return stale data since some committed transactions are not applied on that server yet.</li>
-<li>Write requests are forwarded to leader. Leader (1) calculates the new system state to transform write requests into idempotent transactions and (2) broadcast the state changes to other servers through atomic broadcast protocol ZAB.</li>
-<li>ZooKeeper uses TCP so message order is maintained by network.</li>
-<li>ZooKeeper uses replay log and periodic snapshots for recoverability. ZooKeeper state is not locked when taking the snapshot, but idempotent transactions can be applied twice as long as in order.</li>
-</ul>
-<p><img alt="components" src="../images/components.jpg" /></p></div>
+<h2 id="architecture">Architecture</h2>
+<h2 id="availability">Availability</h2>
+<h2 id="utilization">Utilization</h2></div>
         </div>
 
         <footer class="col-md-12">
