@@ -1,5 +1,5 @@
 site_name: kophy's notes
-repo_url: https://github.com/kophy/notes
+repo_url: https://github.com/kophy/Notes
 
 theme:
   name: 'flatly'
@@ -14,18 +14,19 @@ markdown_extensions:
 
 pages:
     - Home: 'index.md'
-    - System:
+    - Infrastructure:
       - Storage:
         - bigtable: 'bigtable/bigtable.md'
         - f1: 'f1/f1.md'
-      - Batch:
+      - Data Processing:
         - flume: 'flume/flume.md'
-      - Streaming:
         - storm: 'storm/storm.md'
-      - Cluster:
+      - Cluster Management:
+        - borg: 'borg/borg.md'
         - zookeeper: 'zookeeper/zookeeper.md'
       - Low-level:
         - zfs: 'zfs/zfs.md'
     - Machine Learning:
       - Embedding:
         - word2vec: 'word2vec/word2vec.md'
+    # Product:
