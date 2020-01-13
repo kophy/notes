@@ -153,18 +153,57 @@
         <li class="main active"><a href="#large-scale-cluster-management-at-google-with-borg">Large-scale cluster management at Google with Borg</a></li>
             <li><a href="#basics">Basics</a></li>
             <li><a href="#architecture">Architecture</a></li>
-            <li><a href="#availability">Availability</a></li>
-            <li><a href="#utilization">Utilization</a></li>
+            <li><a href="#features">Features</a></li>
     </ul>
 </div></div>
                 <div class="col-md-9" role="main">
 
 <h1 id="large-scale-cluster-management-at-google-with-borg">Large-scale cluster management at Google with Borg</h1>
-<p><em>A cluster manager runs hundreds of thousands of jobs across a number of clusters and achieves high availability and utilization.</em></p>
+<p><em>A cluster manager runs hundreds of thousands of jobs across clusters effectively and achieves high availability and utilization.</em></p>
 <h2 id="basics">Basics</h2>
+<ul>
+<li>Borg admits, schedules, starts, restarts, and monitors the full range of applications that Google runs.</li>
+<li>Borg runs mainly two types of workloads, long-running server jobs and batch jobs.</li>
+<li>A cluster lives inside a datacenter and hosts a Borg cell with median size of 10k heterogenous machines.</li>
+<li>A Borg task maps to a set of Linux processes running in a container on a machine.</li>
+<li>Borg uses quota for admission control and priority for scheduling.</li>
+<li>Borg name service(BNS) writes task's hostname and port to Chubby so RPC system can find task endpoint.</li>
+</ul>
 <h2 id="architecture">Architecture</h2>
-<h2 id="availability">Availability</h2>
-<h2 id="utilization">Utilization</h2></div>
+<ul>
+<li>A Borg cell has a logically centralized controller Borgmaster and each machine has an agent process Borglet.</li>
+<li>Borgmaster consists of two processes:<ul>
+<li>the main Borgmaster process handles client RPCs, manages state machines and communicates with Borglets,</li>
+<li>the scheduler process assigns tasks to machines with feasibility checking and scoring.</li>
+</ul>
+</li>
+<li>The Borgmaster is replicated five times and each replica records states in the Paxos store on local disks.</li>
+<li>Borgmaster keeps checkpoints(periodic snapshots plus change log) in the Paxos store.</li>
+<li>Borglet starts/stops tasks and manages local resources. Borgmaster periodically polls Borglets for current state and sends requests.</li>
+<li>The elected master is responsible for preparing messages to Borglets and updating the cell's state. For performance scalability each Borgmaster runs a stateless link shard to handle the communication with some Borglets.</li>
+</ul>
+<p><img alt="architecture" src="../images/architecture.jpg" /></p>
+<h2 id="features">Features</h2>
+<h3 id="scalability">Scalability</h3>
+<ul>
+<li>To handle larger cells, split scheduler into a separate process so it can run in parallel with other Borgmaster functions.</li>
+<li>Use separate threads to talk to Borglets and shard functions across Borgmaster replicas.</li>
+<li>Cache scores until machine/task properties change. Ignore small changes to reduce cache invalidation.</li>
+<li>Instead of examining all machines, scheduler examines machines in random order until it finds enough feasible machines to score.</li>
+</ul>
+<h3 id="availability">Availability</h3>
+<ul>
+<li>Automatically reschedules evicted tasks.</li>
+<li>Reduce correlated failures by spreading tasks of a job across failure domains. </li>
+<li>Use declarative desired-state representations and idempotent mutating operations.</li>
+<li>Already-running tasks continue even if the Borgmaster or the task's Borglet goes down.</li>
+</ul>
+<h3 id="isolation">Isolation</h3>
+<ul>
+<li>Security isolation is implemented with Linux chroot jail.</li>
+<li>Performance isolation is implemented with Linux control groups(cgroups).</li>
+<li>When running out of non-compressible resources(memory, disk, etc), the Borglet terminates task from low priority to high. When running out of compressible resources(CPU cycles, I/O bandwidth, etc), the Borglet throttles usage of not latency-sensitive applications.</li>
+</ul></div>
         </div>
 
         <footer class="col-md-12">
