@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../../img/favicon.ico">
-        <title>zfs - kophy's notes</title>
+        <title>Google News Personalization: Scalable Online Collaborative Filtering - kophy's notes</title>
         <link href="../../css/bootstrap.min.css" rel="stylesheet">
         <link href="../../css/font-awesome.min.css" rel="stylesheet">
         <link href="../../css/base.css" rel="stylesheet">
@@ -36,7 +36,7 @@
                             <li class="navitem">
                                 <a href="../.." class="nav-link">Home</a>
                             </li>
-                            <li class="dropdown active">
+                            <li class="dropdown">
                                 <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Infrastructure <b class="caret"></b></a>
                                 <ul class="dropdown-menu">
                                     
@@ -91,7 +91,7 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="./" class="dropdown-item active">zfs</a>
+    <a href="../../zfs/zfs/" class="dropdown-item">zfs</a>
 </li>
     </ul>
   </li>
@@ -121,17 +121,7 @@
                             </a>
                         </li>
                             <li class="nav-item">
-                                <a rel="prev" href="../../zookeeper/zookeeper/" class="nav-link">
-                                    <i class="fa fa-arrow-left"></i> Previous
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a rel="next" href="../../word2vec/word2vec/" class="nav-link">
-                                    Next <i class="fa fa-arrow-right"></i>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="https://github.com/kophy/Notes/edit/master/docs/zfs/zfs.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
+                                <a href="https://github.com/kophy/Notes/edit/master/docs/google-news/google-news.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
                             </li>
                     </ul>
                 </div>
@@ -151,17 +141,17 @@
     <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
         <ul class="nav flex-column">
             
-            <li class="nav-item" data-level="1"><a href="#zettabyte-file-system" class="nav-link">Zettabyte File System</a>
+            <li class="nav-item" data-level="1"><a href="#google-news-personalization-scalable-online-collaborative-filtering" class="nav-link">Google News Personalization: Scalable Online Collaborative Filtering</a>
               <ul class="nav flex-column">
-            <li class="nav-item" data-level="2"><a href="#features" class="nav-link">Features</a>
-              <ul class="nav flex-column">
-              </ul>
-            </li>
-            <li class="nav-item" data-level="2"><a href="#concepts" class="nav-link">Concepts</a>
+            <li class="nav-item" data-level="2"><a href="#background" class="nav-link">Background</a>
               <ul class="nav flex-column">
               </ul>
             </li>
-            <li class="nav-item" data-level="2"><a href="#implementation" class="nav-link">Implementation</a>
+            <li class="nav-item" data-level="2"><a href="#algorithms" class="nav-link">Algorithms</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#system-structure" class="nav-link">System Structure</a>
               <ul class="nav flex-column">
               </ul>
             </li>
@@ -172,55 +162,14 @@
 </div></div>
                     <div class="col-md-9" role="main">
 
-<h1 id="zettabyte-file-system">Zettabyte File System</h1>
-<p><em>A new file system with strong data integrity, simple administration and immense capacity.</em></p>
-<h2 id="features">Features</h2>
-<ul>
-<li>redivision of labor between file system and volume manager</li>
-<li>pooled storage<ul>
-<li>multiple file systems share a pool of storage devices</li>
-<li>decouple file systems from physical storage</li>
-</ul>
-</li>
-<li>immense capacity<ul>
-<li>128-bit block addresses</li>
-</ul>
-</li>
-<li>always consistent on-disk data<ul>
-<li>transactional copy-on-write model</li>
-</ul>
-</li>
-<li>data integrity<ul>
-<li>checksum all on-disk data</li>
-</ul>
-</li>
-</ul>
-<h2 id="concepts">Concepts</h2>
-<ul>
-<li>On-disk data and metadata are stored in a tree of blocks rooted at <em>uberblock</em>. Data blocks are the leaves of the tree.</li>
-<li>Each block is checksummed before written to disk. The checksum is stored in the block's parent indirect block. <em>Uberblock</em> stores checksum in itself.</li>
-</ul>
-<h2 id="implementation">Implementation</h2>
-<p><img alt="Traditional file system vs ZFS" src="../images/block-diagram.jpg" />
-- SPA handles block allocation and I/O; exports virtually addressed, explicitly allocated and freed blocks to DMU
-- DMU turns virtually addressed blocks into transactional object interface
-- ZPL implements posix file system on DMU objects</p>
-<h3 id="spa-storage-pool-allocator">SPA (Storage Pool Allocator)</h3>
-<ul>
-<li>verify block checksum when reading and update when writing</li>
-<li>use slab allocator to prevent memory fragmentation (copy-on-write file system needs big contiguous chunks to write new blocks)</li>
-</ul>
-<h3 id="dmu-data-management-unit">DMU (Data Management Unit)</h3>
-<ul>
-<li>when a block is written, allocate a new block and copy modified content into the new block</li>
-<li>transaction is "rippling" copy-on-write from data block to <em>uberblock</em></li>
-<li>group transactions together so uberblock and indirect blocks can be rewritten once for many data block writes</li>
-</ul>
-<p><img alt="Copy on write" src="../images/copy-on-write.jpg" /></p>
-<h3 id="zpl-zfs-posix-layer">ZPL (ZFS Posix Layer)</h3>
-<ul>
-<li>use intent log to avoid losing writes before system crashes</li>
-</ul></div>
+<h1 id="google-news-personalization-scalable-online-collaborative-filtering">Google News Personalization: Scalable Online Collaborative Filtering</h1>
+<p><em>Collaborative filtering for generating personalized recommendations for users of Google News.</em></p>
+<h2 id="background">Background</h2>
+<h2 id="algorithms">Algorithms</h2>
+<h3 id="minhash">MinHash</h3>
+<h3 id="plsi">PLSI</h3>
+<h3 id="covisitation">Covisitation</h3>
+<h2 id="system-structure">System Structure</h2></div>
             </div>
         </div>
 
