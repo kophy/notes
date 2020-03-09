@@ -9,3 +9,4 @@ Notes of papers (mainly about system design and machine learning).
 - **ZooKeeper**: Wait-free coordination for Internet-scale systems (2019/10/06)
 - **Storm @Twitter**: (2019/10/12)
 - **Borg**: Large-scale cluster management at Google with Borg (2020/01/12)
+- **MapReduce**: Simplified Data Processing on Large Clusters (2020/03/08)
