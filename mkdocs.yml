@@ -2,7 +2,7 @@ site_name: kophy's notes
 repo_url: https://github.com/kophy/Notes
 
 theme:
-  name: 'flatly'
+  name: 'sandstone'
 
 extra_javascript:
     - 'https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML'
@@ -19,6 +19,7 @@ pages:
         - bigtable: 'bigtable/bigtable.md'
         - f1: 'f1/f1.md'
       - Data Processing:
+        - mapreduce: 'mapreduce/mapreduce.md'
         - flume: 'flume/flume.md'
         - storm: 'storm/storm.md'
       - Cluster Management:
@@ -29,4 +30,3 @@ pages:
     - Machine Learning:
       - Embedding:
         - word2vec: 'word2vec/word2vec.md'
-    # Product:

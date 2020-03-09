@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../../img/favicon.ico">
-        <title>zfs - kophy's notes</title>
+        <title>mapreduce - kophy's notes</title>
         <link href="../../css/bootstrap.min.css" rel="stylesheet">
         <link href="../../css/font-awesome.min.css" rel="stylesheet">
         <link href="../../css/base.css" rel="stylesheet">
@@ -59,7 +59,7 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../mapreduce/mapreduce/" class="dropdown-item">mapreduce</a>
+    <a href="./" class="dropdown-item active">mapreduce</a>
 </li>
             
 <li>
@@ -91,7 +91,7 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="./" class="dropdown-item active">zfs</a>
+    <a href="../../zfs/zfs/" class="dropdown-item">zfs</a>
 </li>
     </ul>
   </li>
@@ -121,17 +121,17 @@
                             </a>
                         </li>
                             <li class="nav-item">
-                                <a rel="prev" href="../../zookeeper/zookeeper/" class="nav-link">
+                                <a rel="prev" href="../../f1/f1/" class="nav-link">
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../../word2vec/word2vec/" class="nav-link">
+                                <a rel="next" href="../../flume/flume/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="https://github.com/kophy/Notes/edit/master/docs/zfs/zfs.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
+                                <a href="https://github.com/kophy/Notes/edit/master/docs/mapreduce/mapreduce.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
                             </li>
                     </ul>
                 </div>
@@ -151,17 +151,21 @@
     <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
         <ul class="nav flex-column">
             
-            <li class="nav-item" data-level="1"><a href="#zettabyte-file-system" class="nav-link">Zettabyte File System</a>
+            <li class="nav-item" data-level="1"><a href="#mapreduce-simplified-data-processing-on-large-clusters" class="nav-link">MapReduce: Simplified Data Processing on Large Clusters</a>
               <ul class="nav flex-column">
-            <li class="nav-item" data-level="2"><a href="#features" class="nav-link">Features</a>
-              <ul class="nav flex-column">
-              </ul>
-            </li>
-            <li class="nav-item" data-level="2"><a href="#concepts" class="nav-link">Concepts</a>
+            <li class="nav-item" data-level="2"><a href="#introduction" class="nav-link">Introduction</a>
               <ul class="nav flex-column">
               </ul>
             </li>
-            <li class="nav-item" data-level="2"><a href="#implementation" class="nav-link">Implementation</a>
+            <li class="nav-item" data-level="2"><a href="#execution" class="nav-link">Execution</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#fault-tolerance" class="nav-link">Fault Tolerance</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#miscellaneous" class="nav-link">Miscellaneous</a>
               <ul class="nav flex-column">
               </ul>
             </li>
@@ -172,54 +176,32 @@
 </div></div>
                     <div class="col-md-9" role="main">
 
-<h1 id="zettabyte-file-system">Zettabyte File System</h1>
-<p><em>A new file system with strong data integrity, simple administration and immense capacity.</em></p>
-<h2 id="features">Features</h2>
+<h1 id="mapreduce-simplified-data-processing-on-large-clusters">MapReduce: Simplified Data Processing on Large Clusters</h1>
+<p><em>A programming model and an associated implementation for processing and generating large data sets.</em></p>
+<h2 id="introduction">Introduction</h2>
 <ul>
-<li>redivision of labor between file system and volume manager</li>
-<li>pooled storage<ul>
-<li>multiple file systems share a pool of storage devices</li>
-<li>decouple file systems from physical storage</li>
+<li>Many computation tasks are conceptually straightforward, but given the size of input data, the computations have to be distributed across machines to finish in a reasonable amount of time.</li>
+<li>MapReduce is an abstraction that can express many computation tasks while hiding details of parallelization, fault-tolerance, data distribution and load balancing.</li>
+<li>Users specify a map function that processes a key/value pair to generate a set of intermediate key/value pairs, and a reduce function that merges all intermediate values associated with the same intermediate key.</li>
 </ul>
-</li>
-<li>immense capacity<ul>
-<li>128-bit block addresses</li>
-</ul>
-</li>
-<li>always consistent on-disk data<ul>
-<li>transactional copy-on-write model</li>
-</ul>
-</li>
-<li>data integrity<ul>
-<li>checksum all on-disk data</li>
-</ul>
-</li>
-</ul>
-<h2 id="concepts">Concepts</h2>
+<h2 id="execution">Execution</h2>
 <ul>
-<li>On-disk data and metadata are stored in a tree of blocks rooted at <em>uberblock</em>. Data blocks are the leaves of the tree.</li>
-<li>Each block is checksummed before written to disk. The checksum is stored in the block's parent indirect block. <em>Uberblock</em> stores checksum in itself.</li>
+<li>A single master assigns tasks to workers; there are M map tasks and R reduce tasks in total.</li>
+<li>For map task, worker reads input, applies user-defined Map function and periodically writes intermediate results buffered in memory to local disk.</li>
+<li>For reduce task, worker uses rpcs to read intermediate results on map workers' local disks, sorts intermediate results to group occurrences of the same key, applies user-defined Reduce function and writes final results to a global file system.</li>
+<li>Master is responsible of propagating the locations of intermediate files from map tasks to reduce tasks.</li>
 </ul>
-<h2 id="implementation">Implementation</h2>
-<p><img alt="Traditional file system vs ZFS" src="../images/block-diagram.jpg" />
-- SPA handles block allocation and I/O; exports virtually addressed, explicitly allocated and freed blocks to DMU
-- DMU turns virtually addressed blocks into transactional object interface
-- ZPL implements posix file system on DMU objects</p>
-<h3 id="spa-storage-pool-allocator">SPA (Storage Pool Allocator)</h3>
+<p><img alt="execution" src="../images/execution.jpg" /></p>
+<h2 id="fault-tolerance">Fault Tolerance</h2>
 <ul>
-<li>verify block checksum when reading and update when writing</li>
-<li>use slab allocator to prevent memory fragmentation (copy-on-write file system needs big contiguous chunks to write new blocks)</li>
+<li>For worker failure, master periodically pings workers and marks the worker that has no response for a certain amount of time as failed. Completed map tasks and any in-progress tasks on that worker are rescheduled to other workers; no need to re-execute completed reduce tasks because output is stored in global file system instead of worker's local disk.</li>
+<li>For master failure, the computation is just aborted and it is client's responsibility to check and retry.</li>
 </ul>
-<h3 id="dmu-data-management-unit">DMU (Data Management Unit)</h3>
+<h2 id="miscellaneous">Miscellaneous</h2>
 <ul>
-<li>when a block is written, allocate a new block and copy modified content into the new block</li>
-<li>transaction is "rippling" copy-on-write from data block to <em>uberblock</em></li>
-<li>group transactions together so uberblock and indirect blocks can be rewritten once for many data block writes</li>
-</ul>
-<p><img alt="Copy on write" src="../images/copy-on-write.jpg" /></p>
-<h3 id="zpl-zfs-posix-layer">ZPL (ZFS Posix Layer)</h3>
-<ul>
-<li>use intent log to avoid losing writes before system crashes</li>
+<li><strong>Locality:</strong> master attempts to schedule map tasks on or close to the machines that contains corresponding input data(input data managed by GFS is also stored in the cluster).</li>
+<li><strong>Task granularity:</strong> ideally M and R should be large to improve load balancing and speed up failure recovery, but there are practical bounds since master needs to keep <script type="math/tex">O(M\times R)</script> states in memory and each reduce task produces a separate output file.</li>
+<li><strong>Backup tasks:</strong> when the MapReduce is close to completion, master schedules backup executions for remaining in-progress tasks to alleviate the problem of stragglers.</li>
 </ul></div>
             </div>
         </div>
