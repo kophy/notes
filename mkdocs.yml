@@ -30,3 +30,6 @@ pages:
     - Machine Learning:
       - Embedding:
         - word2vec: 'word2vec/word2vec.md'
+    - Advertisement:
+      - CTR:
+        - predicting-clicks: 'predicting-clicks/predicting-clicks.md'
