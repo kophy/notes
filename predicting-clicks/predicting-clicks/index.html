@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../../img/favicon.ico">
-        <title>storm - kophy's notes</title>
+        <title>predicting-clicks - kophy's notes</title>
         <link href="../../css/bootstrap.min.css" rel="stylesheet">
         <link href="../../css/font-awesome.min.css" rel="stylesheet">
         <link href="../../css/base.css" rel="stylesheet">
@@ -36,7 +36,7 @@
                             <li class="navitem">
                                 <a href="../.." class="nav-link">Home</a>
                             </li>
-                            <li class="dropdown active">
+                            <li class="dropdown">
                                 <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Infrastructure <b class="caret"></b></a>
                                 <ul class="dropdown-menu">
                                     
@@ -67,7 +67,7 @@
 </li>
             
 <li>
-    <a href="./" class="dropdown-item active">storm</a>
+    <a href="../../storm/storm/" class="dropdown-item">storm</a>
 </li>
     </ul>
   </li>
@@ -112,7 +112,7 @@
   </li>
                                 </ul>
                             </li>
-                            <li class="dropdown">
+                            <li class="dropdown active">
                                 <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Advertisement <b class="caret"></b></a>
                                 <ul class="dropdown-menu">
                                     
@@ -121,7 +121,7 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../predicting-clicks/predicting-clicks/" class="dropdown-item">predicting-clicks</a>
+    <a href="./" class="dropdown-item active">predicting-clicks</a>
 </li>
     </ul>
   </li>
@@ -136,17 +136,17 @@
                             </a>
                         </li>
                             <li class="nav-item">
-                                <a rel="prev" href="../../flume/flume/" class="nav-link">
+                                <a rel="prev" href="../../word2vec/word2vec/" class="nav-link">
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../../borg/borg/" class="nav-link">
+                                <a rel="next" class="nav-link disabled">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="https://github.com/kophy/Notes/edit/master/docs/storm/storm.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
+                                <a href="https://github.com/kophy/Notes/edit/master/docs/predicting-clicks/predicting-clicks.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
                             </li>
                     </ul>
                 </div>
@@ -166,19 +166,21 @@
     <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
         <ul class="nav flex-column">
             
-            <li class="nav-item" data-level="1"><a href="#storm-twitter" class="nav-link">Storm @Twitter</a>
+            <li class="nav-item" data-level="1"><a href="#predicting-clicks-estimating-the-click-through-rate-for-new-ads" class="nav-link">Predicting Clicks: Estimating the Click-Through Rate for New Ads</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-level="2"><a href="#background" class="nav-link">Background</a>
               <ul class="nav flex-column">
               </ul>
             </li>
-            
-            <li class="nav-item" data-level="1"><a href="#basics" class="nav-link">Basics</a>
+            <li class="nav-item" data-level="2"><a href="#model-basics" class="nav-link">Model Basics</a>
               <ul class="nav flex-column">
               </ul>
             </li>
-            
-            <li class="nav-item" data-level="1"><a href="#architecture" class="nav-link">Architecture</a>
+            <li class="nav-item" data-level="2"><a href="#features" class="nav-link">Features</a>
               <ul class="nav flex-column">
-            <li class="nav-item" data-level="2"><a href="#processing-semantics" class="nav-link">Processing Semantics</a>
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#others" class="nav-link">Others</a>
               <ul class="nav flex-column">
               </ul>
             </li>
@@ -189,42 +191,36 @@
 </div></div>
                     <div class="col-md-9" role="main">
 
-<h1 id="storm-twitter">Storm @Twitter</h1>
-<p><em>A real-time fault-tolerant and distributed stream data processing system.</em></p>
-<h1 id="basics">Basics</h1>
+<h1 id="predicting-clicks-estimating-the-click-through-rate-for-new-ads">Predicting Clicks: Estimating the Click-Through Rate for New Ads</h1>
+<p><em>Use features of ads, terms, and advertisers to learn a model that accurately predicts the click-though rate for new ads.</em></p>
+<h2 id="background">Background</h2>
 <ul>
-<li>Storm data processing architecture consists of streams of tuples flowing through topologies. A topology is a directed graph where vertices represent computation and edges represent the data flow.</li>
-<li>Storm is used by groups inside Twitter like revenue, user services, search and content discovery. Most of topologies have &lt;3 stages.</li>
-<li>Storm runs on distributed cluster like Mesos, uses ZooKeeper to keep state and pulls data from queues like Kafka.</li>
+<li>The key task for a search engine advertising system is to determine what advertisements should be displayed, and in what order, for each query that the search engine receives. </li>
+<li>Assume the probability of an ad is clicked is independent of its position and the probability of an ad is viewed only depends on position. <script type="math/tex">P(click|ad,pos)=p(click|ad, seen) \cdot p(seen|pos)</script>. Then CTR is defined as <script type="math/tex">p(click|ad, seen)</script>.</li>
+<li>For ads that has been displayed enough times(up to 200-300 search pages), CTR can be estimated based on historical information, but this doesn't work for new ads.</li>
 </ul>
-<h1 id="architecture">Architecture</h1>
-<h3 id="overview">Overview</h3>
+<h2 id="model-basics">Model Basics</h2>
 <ul>
-<li>Clients submit topologies to Nimbus, the master node of Storm.</li>
-<li>Nimbus distributes and coordinates the execution of topologies on worker nodes.</li>
-<li>Each worker node runs a Supervisor, which receives assignment from Nimbus and monitors the health of workers.</li>
-<li>Each worker node runs one or more worker processes. Each work process runs a JVM, in which it runs one or more executors made of tasks.</li>
-<li>Worker process serve as containers on host machines. Tasks provide intra-bolt/intra-spout parallelism and executors provide intra-topology parallelism.</li>
+<li>The goal is to create a model to predict initial CTR for new ads.</li>
+<li>Training and testing data is split on advertiser level, so we can consider each ad and account as completely novel to the system.</li>
+<li>Use Logistics regression and cross-entropy loss function.</li>
+<li>For each feature <script type="math/tex">f_i</script>, add derived features <script type="math/tex">log(f_i+1)</script> and <script type="math/tex">fi^2</script>. Feature values more than five standard deviations from the mean are truncated.</li>
 </ul>
-<p><img alt="architecture" src="../images/architecture.jpg" /></p>
-<h3 id="nimbus">Nimbus</h3>
+<h2 id="features">Features</h2>
 <ul>
-<li>Nimbus is a Thrift service. Topologies are Thrift objects.</li>
-<li>Nimbus stores topologies in ZooKeeper and Jar files of user codes on local disk of the Nimbus machine.</li>
-<li>Nimbus and Supervisor are fail-fast and stateless. States are kept in ZooKeeper or local disks.</li>
+<li>Term CTR: the CTR of other ads with same or related bid terms.</li>
+<li>Ad quality feature set<ul>
+<li>manual features: appearance, attention capture, reputation, landing page quality, relevance.</li>
+<li>unigram features: one-hot encoding of most common 10K words in ad title and body.</li>
 </ul>
-<h3 id="workers">Workers</h3>
-<ul>
-<li>Each worker has two dedicated threads, a worker receive thread and a worker send thread, to route incoming and outgoing tuples.</li>
-<li>User logic thread runs actual task for input tuples and places output tuples to output queue.</li>
-<li>Executor send thread checks the task identifier of tuples in output queue and writes them to corresponding input queue(destination is same worker) or global transfer queue.</li>
+</li>
+<li>Order specificity feature set: capture how targeted an order with the category entropy of bid terms.</li>
+<li>Search data feature set: the approximate frequency of bid term occurring on the Web and users query for the bid term.</li>
 </ul>
-<p><img alt="inside worker" src="../images/inside%20worker.jpg" /></p>
-<h2 id="processing-semantics">Processing Semantics</h2>
+<h2 id="others">Others</h2>
 <ul>
-<li>Storm provides two processing semantics, "at least once" and "at most once".</li>
-<li>"At least once" is done by an "acker" bolt. It tracks the DAG of every tuple emitted by spout and acknowledges tasks when output tuple leaves topology.</li>
-<li>Storm generates 64-bit message id for each tuple. Acker bolt uses XOR checksum of message ids to avoid large memory usage for provenance tracking.</li>
+<li>Although there is overlapping between features, we want to Include as many feature sets as possible for robustness in adversarial situations.</li>
+<li>Improvements: making the CTR estimation dependent on user query, adding human judges as new source of information, making the model time-dependent.</li>
 </ul></div>
             </div>
         </div>
