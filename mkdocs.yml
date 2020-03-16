@@ -21,6 +21,7 @@ pages:
       - Data Processing:
         - mapreduce: 'mapreduce/mapreduce.md'
         - flume: 'flume/flume.md'
+        - rdd: 'rdd/rdd.md'
         - storm: 'storm/storm.md'
       - Cluster Management:
         - borg: 'borg/borg.md'
