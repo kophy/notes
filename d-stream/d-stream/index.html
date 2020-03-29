@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../../img/favicon.ico">
-        <title>predicting-clicks - kophy's notes</title>
+        <title>d-stream - kophy's notes</title>
         <link href="../../css/bootstrap.min.css" rel="stylesheet">
         <link href="../../css/font-awesome.min.css" rel="stylesheet">
         <link href="../../css/base.css" rel="stylesheet">
@@ -36,7 +36,7 @@
                             <li class="navitem">
                                 <a href="../.." class="nav-link">Home</a>
                             </li>
-                            <li class="dropdown">
+                            <li class="dropdown active">
                                 <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Infrastructure <b class="caret"></b></a>
                                 <ul class="dropdown-menu">
                                     
@@ -71,7 +71,7 @@
 </li>
             
 <li>
-    <a href="../../d-stream/d-stream/" class="dropdown-item">d-stream</a>
+    <a href="./" class="dropdown-item active">d-stream</a>
 </li>
             
 <li>
@@ -120,7 +120,7 @@
   </li>
                                 </ul>
                             </li>
-                            <li class="dropdown active">
+                            <li class="dropdown">
                                 <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Advertisement <b class="caret"></b></a>
                                 <ul class="dropdown-menu">
                                     
@@ -129,7 +129,7 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="./" class="dropdown-item active">predicting-clicks</a>
+    <a href="../../predicting-clicks/predicting-clicks/" class="dropdown-item">predicting-clicks</a>
 </li>
     </ul>
   </li>
@@ -144,17 +144,17 @@
                             </a>
                         </li>
                             <li class="nav-item">
-                                <a rel="prev" href="../../word2vec/word2vec/" class="nav-link">
+                                <a rel="prev" href="../../rdd/rdd/" class="nav-link">
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" class="nav-link disabled">
+                                <a rel="next" href="../../storm/storm/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="https://github.com/kophy/Notes/edit/master/docs/predicting-clicks/predicting-clicks.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
+                                <a href="https://github.com/kophy/Notes/edit/master/docs/d-stream/d-stream.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
                             </li>
                     </ul>
                 </div>
@@ -174,21 +174,21 @@
     <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
         <ul class="nav flex-column">
             
-            <li class="nav-item" data-level="1"><a href="#predicting-clicks-estimating-the-click-through-rate-for-new-ads" class="nav-link">Predicting Clicks: Estimating the Click-Through Rate for New Ads</a>
+            <li class="nav-item" data-level="1"><a href="#discretized-streams-fault-tolerant-streaming-computation-at-scale" class="nav-link">Discretized Streams: Fault-Tolerant Streaming Computation at Scale</a>
               <ul class="nav flex-column">
             <li class="nav-item" data-level="2"><a href="#background" class="nav-link">Background</a>
               <ul class="nav flex-column">
               </ul>
             </li>
-            <li class="nav-item" data-level="2"><a href="#model-basics" class="nav-link">Model Basics</a>
+            <li class="nav-item" data-level="2"><a href="#discretized-streams" class="nav-link">Discretized Streams</a>
               <ul class="nav flex-column">
               </ul>
             </li>
-            <li class="nav-item" data-level="2"><a href="#features" class="nav-link">Features</a>
+            <li class="nav-item" data-level="2"><a href="#system-architecture" class="nav-link">System Architecture</a>
               <ul class="nav flex-column">
               </ul>
             </li>
-            <li class="nav-item" data-level="2"><a href="#others" class="nav-link">Others</a>
+            <li class="nav-item" data-level="2"><a href="#fault-and-straggler-recovery" class="nav-link">Fault and Straggler Recovery</a>
               <ul class="nav flex-column">
               </ul>
             </li>
@@ -199,36 +199,39 @@
 </div></div>
                     <div class="col-md-9" role="main">
 
-<h1 id="predicting-clicks-estimating-the-click-through-rate-for-new-ads">Predicting Clicks: Estimating the Click-Through Rate for New Ads</h1>
-<p><em>Use features of ads, terms, and advertisers to learn a model that accurately predicts the click-though rate for new ads.</em></p>
+<h1 id="discretized-streams-fault-tolerant-streaming-computation-at-scale">Discretized Streams: Fault-Tolerant Streaming Computation at Scale</h1>
+<p><em>A new stream processing model with efficient fault recovery and straggler mitigation.</em></p>
 <h2 id="background">Background</h2>
 <ul>
-<li>The key task for a search engine advertising system is to determine what advertisements should be displayed, and in what order, for each query that the search engine receives. </li>
-<li>Assume the probability of an ad is clicked is independent of its position and the probability of an ad is viewed only depends on position. <script type="math/tex">P(click|ad,pos)=p(click|ad, seen) \cdot p(seen|pos)</script>. Then CTR is defined as <script type="math/tex">p(click|ad, seen)</script>.</li>
-<li>For ads that has been displayed enough times(up to 200-300 search pages), CTR can be estimated based on historical information, but this doesn't work for new ads.</li>
-</ul>
-<h2 id="model-basics">Model Basics</h2>
-<ul>
-<li>The goal is to create a model to predict initial CTR for new ads.</li>
-<li>Training and testing data is split on advertiser level, so we can consider each ad and account as completely novel to the system.</li>
-<li>Use Logistics regression and cross-entropy loss function.</li>
-<li>For each feature <script type="math/tex">f_i</script>, add derived features <script type="math/tex">log(f_i+1)</script> and <script type="math/tex">fi^2</script>. Feature values more than five standard deviations from the mean are truncated.</li>
-</ul>
-<h2 id="features">Features</h2>
-<ul>
-<li>Term CTR: the CTR of other ads with same or related bid terms.</li>
-<li>Ad quality feature set<ul>
-<li>manual features: appearance, attention capture, reputation, landing page quality, relevance.</li>
-<li>unigram features: one-hot encoding of most common 10K words in ad title and body.</li>
+<li>There is a need for streaming computation models that can scale transparently to large clusters, where faults and stragglers are inevitable.</li>
+<li>Most existing systems are based on continuous operator model(like Storm). The stateful nature of operators and nondeterminism of records make it hard to provide efficient fault recovery.<ul>
+<li>Two main approaches, replication(2x hardware) or upstream backup(long replay time), are both expensive.</li>
+<li>Neither approach handles stragglers -- in replication, synchronization protocols slow both down replicas; in upstream backup, a straggler must be treated as a failure. </li>
 </ul>
 </li>
-<li>Order specificity feature set: capture how targeted an order with the category entropy of bid terms.</li>
-<li>Search data feature set: the approximate frequency of bid term occurring on the Web and users query for the bid term.</li>
+<li>We seek a system design with scalability to hundreds of nodes, minimal cost, second-scale latency and second-scale fault/straggler recovery.</li>
 </ul>
-<h2 id="others">Others</h2>
+<h2 id="discretized-streams">Discretized Streams</h2>
 <ul>
-<li>Although there is overlapping between features, we want to Include as many feature sets as possible for robustness in adversarial situations.</li>
-<li>Improvements: making the CTR estimation dependent on user query, adding human judges as new source of information, making the model time-dependent.</li>
+<li>D-Stream model treats a streaming computation as a series of deterministic batch computations on small time intervals.</li>
+<li>Users define programs by manipulating D-Stream objects; a D-Stream is a sequence of RDDs.</li>
+<li>The consistency semantics are clear because time is naturally discretized into intervals and each interval's output RDDs reflect all inputs received up to that interval.</li>
+<li>D-Streams place records into input datasets based on the time when each records <em>arrives</em> at the system. Grouping records by external timestamps is not natively supported.</li>
+</ul>
+<p><img alt="overview" src="../images/overview.jpg" /></p>
+<h2 id="system-architecture">System Architecture</h2>
+<ul>
+<li>Spark Streaming consists of three components, (1) a master to track D-Stream lineage and schedules tasks, (2) worker nodes to receive/store/process data and computed RDDs and (3) a client library to send data into system.</li>
+<li>To decide when to process a new interval, nodes synchronize clocks via NTP and send the master a list of received block IDs in each interval when it ends. The master then starts launching tasks for that interval without further synchronization.</li>
+<li>Spark Streaming divides computations into short, stateless, deterministic tasks, each of which may run on any node in the cluster. Moving computations to another machine is hard in traditional streaming systems with rigid topologies.</li>
+<li>To support streaming, Spark Streaming implements changes/optimizations like timestep pipelining, lineage cutoff, master recovery, etc.</li>
+</ul>
+<p><img alt="components" src="../images/components.jpg" /></p>
+<h2 id="fault-and-straggler-recovery">Fault and Straggler Recovery</h2>
+<ul>
+<li><strong>Parallel recovery:</strong> when a node fails, the state RDD partitions and running tasks on that node can be recomputed in parallel on other nodes.</li>
+<li><strong>Straggler mitigation:</strong> run speculative backup copies of slow tasks like in batch systems.</li>
+<li><strong>Master recovery:</strong> workers can simply connect to a new master since there is no problem if a given RDD is computed twice(it is fine to lose some running tasks).</li>
 </ul></div>
             </div>
         </div>
