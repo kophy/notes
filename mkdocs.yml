@@ -23,6 +23,7 @@ pages:
         - flume: 'flume/flume.md'
         - rdd: 'rdd/rdd.md'
         - d-stream: 'd-stream/d-stream.md'
+        - millwheel: 'millwheel/millwheel.md'
         - storm: 'storm/storm.md'
       - Cluster Management:
         - borg: 'borg/borg.md'
