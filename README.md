@@ -11,3 +11,4 @@ Notes of papers (mainly about system design and machine learning).
 - **Borg**: Large-scale cluster management at Google with Borg (2020/01/12)
 - **MapReduce**: Simplified Data Processing on Large Clusters (2020/03/08)
 - **Predicting Clicks**: Estimating the Click-Through Rate for New Ads (2020/03/14)
+- **Discretized Streams**: Fault-Tolerant Streaming Computation at Scale (2020/03/28）
