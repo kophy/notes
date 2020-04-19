@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../../img/favicon.ico">
-        <title>predicting-clicks - kophy's notes</title>
+        <title>tao - kophy's notes</title>
         <link href="../../css/bootstrap.min.css" rel="stylesheet">
         <link href="../../css/font-awesome.min.css" rel="stylesheet">
         <link href="../../css/base.css" rel="stylesheet">
@@ -36,7 +36,7 @@
                             <li class="navitem">
                                 <a href="../.." class="nav-link">Home</a>
                             </li>
-                            <li class="dropdown">
+                            <li class="dropdown active">
                                 <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Infrastructure <b class="caret"></b></a>
                                 <ul class="dropdown-menu">
                                     
@@ -53,7 +53,7 @@
 </li>
             
 <li>
-    <a href="../../tao/tao/" class="dropdown-item">tao</a>
+    <a href="./" class="dropdown-item active">tao</a>
 </li>
     </ul>
   </li>
@@ -128,7 +128,7 @@
   </li>
                                 </ul>
                             </li>
-                            <li class="dropdown active">
+                            <li class="dropdown">
                                 <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Advertisement <b class="caret"></b></a>
                                 <ul class="dropdown-menu">
                                     
@@ -137,7 +137,7 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="./" class="dropdown-item active">predicting-clicks</a>
+    <a href="../../predicting-clicks/predicting-clicks/" class="dropdown-item">predicting-clicks</a>
 </li>
     </ul>
   </li>
@@ -152,17 +152,17 @@
                             </a>
                         </li>
                             <li class="nav-item">
-                                <a rel="prev" href="../../word2vec/word2vec/" class="nav-link">
+                                <a rel="prev" href="../../f1/f1/" class="nav-link">
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" class="nav-link disabled">
+                                <a rel="next" href="../../mapreduce/mapreduce/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="https://github.com/kophy/Notes/edit/master/docs/predicting-clicks/predicting-clicks.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
+                                <a href="https://github.com/kophy/Notes/edit/master/docs/tao/tao.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
                             </li>
                     </ul>
                 </div>
@@ -182,21 +182,25 @@
     <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
         <ul class="nav flex-column">
             
-            <li class="nav-item" data-level="1"><a href="#predicting-clicks-estimating-the-click-through-rate-for-new-ads" class="nav-link">Predicting Clicks: Estimating the Click-Through Rate for New Ads</a>
+            <li class="nav-item" data-level="1"><a href="#tao-facebooks-distributed-data-store-for-the-social-graph" class="nav-link">TAO: Facebook’s Distributed Data Store for the Social Graph</a>
               <ul class="nav flex-column">
             <li class="nav-item" data-level="2"><a href="#background" class="nav-link">Background</a>
               <ul class="nav flex-column">
               </ul>
             </li>
-            <li class="nav-item" data-level="2"><a href="#model-basics" class="nav-link">Model Basics</a>
+            <li class="nav-item" data-level="2"><a href="#data-model-and-api" class="nav-link">Data Model and API</a>
               <ul class="nav flex-column">
               </ul>
             </li>
-            <li class="nav-item" data-level="2"><a href="#features" class="nav-link">Features</a>
+            <li class="nav-item" data-level="2"><a href="#architecture" class="nav-link">Architecture</a>
               <ul class="nav flex-column">
               </ul>
             </li>
-            <li class="nav-item" data-level="2"><a href="#others" class="nav-link">Others</a>
+            <li class="nav-item" data-level="2"><a href="#consistency" class="nav-link">Consistency</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#fault-tolerance" class="nav-link">Fault Tolerance</a>
               <ul class="nav flex-column">
               </ul>
             </li>
@@ -207,36 +211,64 @@
 </div></div>
                     <div class="col-md-9" role="main">
 
-<h1 id="predicting-clicks-estimating-the-click-through-rate-for-new-ads">Predicting Clicks: Estimating the Click-Through Rate for New Ads</h1>
-<p><em>Use features of ads, terms, and advertisers to learn a model that accurately predicts the click-though rate for new ads.</em></p>
+<h1 id="tao-facebooks-distributed-data-store-for-the-social-graph">TAO: Facebook’s Distributed Data Store for the Social Graph</h1>
+<p><em>A geographically distributed data store that provides efficient and timely access to the social graph.</em></p>
 <h2 id="background">Background</h2>
 <ul>
-<li>The key task for a search engine advertising system is to determine what advertisements should be displayed, and in what order, for each query that the search engine receives. </li>
-<li>Assume the probability of an ad is clicked is independent of its position and the probability of an ad is viewed only depends on position. <script type="math/tex">P(click|ad,pos)=p(click|ad, seen) \cdot p(seen|pos)</script>. Then CTR is defined as <script type="math/tex">p(click|ad, seen)</script>.</li>
-<li>For ads that has been displayed enough times(up to 200-300 search pages), CTR can be estimated based on historical information, but this doesn't work for new ads.</li>
+<li>The content Facebook presents to each user is highly tailored, so we have to perform filtering and aggregation when the content is viewed instead of when the content is created.</li>
+<li>Facebook was originally built with MySQL/PHP/memcache. This look-aside key-value cache architecture has problems like inefficient edge lists, distributed control logic and expensive read-after-write consistency.</li>
+<li>TAO is designed to handle the workload of read-mostly access to a constantly changing graph. Efficiency and availability are explicitly favored over consistency.</li>
 </ul>
-<h2 id="model-basics">Model Basics</h2>
+<h2 id="data-model-and-api">Data Model and API</h2>
+<pre><code>Object:(id) -&gt; (otype, (key -&gt; value))
+Association: (id1, atype, id2) -&gt; (time, (key -&gt; value)*)
+Association List: (id1, atype) -&gt; [a1, a2, ..., an]
+</code></pre>
+
 <ul>
-<li>The goal is to create a model to predict initial CTR for new ads.</li>
-<li>Training and testing data is split on advertiser level, so we can consider each ad and account as completely novel to the system.</li>
-<li>Use Logistics regression and cross-entropy loss function.</li>
-<li>For each feature <script type="math/tex">f_i</script>, add derived features <script type="math/tex">log(f_i+1)</script> and <script type="math/tex">fi^2</script>. Feature values more than five standard deviations from the mean are truncated.</li>
+<li>Objects are typed nodes. Each object has a globally unique id.</li>
+<li>Associations are typed directed edges between objects; at most one association can exist between two objects.</li>
+<li>Both objects and associations may contain data as key-&gt;value pairs.</li>
+<li>Bidirectional edges are modeled as two associations. TAO keeps associations in sync with their inverses.</li>
+<li>TAO's association queries are organized around association lists(associations in descending order by the "time" field).</li>
+<li>A per-atype upper bound for each query is enforced(<code>assoc_ranage(id1, atype, pos, limit)</code>), so the client must issue multiple queries to enumerate a longer association list.</li>
 </ul>
-<h2 id="features">Features</h2>
+<h2 id="architecture">Architecture</h2>
+<h3 id="basics">Basics</h3>
 <ul>
-<li>Term CTR: the CTR of other ads with same or related bid terms.</li>
-<li>Ad quality feature set<ul>
-<li>manual features: appearance, attention capture, reputation, landing page quality, relevance.</li>
-<li>unigram features: one-hot encoding of most common 10K words in ad title and body.</li>
+<li>TAO uses MySQL as persistent storage. Data is divided into logical shards and each database server is responsible for one or more shards.</li>
+<li>Each object id has an embedded shard_id(fixed for entire lifetime). An association is stored on the shard of its id1.</li>
+<li>Multiple caching servers together form a tier. Shards are mapped onto cache servers with consistent hashing.</li>
+<li>The TAO in-memory cache contains objects, association lists and association counts. Cache servers understand the semantics of the contents and can use them to answer queries not processed before(example: cache count zero for range query).</li>
+<li>Client issues requests directly to the appropriate cache server, which will complete the read/write request(contact other cache servers/databases if necessary).</li>
+<li>For write operation on an association with inverse, the cache server for id1 will contact the cache server for id2 and issue write to database after the inverse write is complete. TAO does not provide atomicity between two updates; hanging associations are repaired by an asynchronous job.</li>
 </ul>
-</li>
-<li>Order specificity feature set: capture how targeted an order with the category entropy of bid terms.</li>
-<li>Search data feature set: the approximate frequency of bid term occurring on the Web and users query for the bid term.</li>
-</ul>
-<h2 id="others">Others</h2>
+<h3 id="scaling">Scaling</h3>
+<p><strong>Leader and Follower Tiers</strong></p>
 <ul>
-<li>Although there is overlapping between features, we want to Include as many feature sets as possible for robustness in adversarial situations.</li>
-<li>Improvements: making the CTR estimation dependent on user query, adding human judges as new source of information, making the model time-dependent.</li>
+<li>Larger tiers are problematic because they are prone to hot spots and have O(N^2) growth in all-to-all connections.</li>
+<li>We split the cache into two levels: a leader tier and multiple follow tiers. Leaders behave as the basic case, while followers will instead forward read misses and writes to leaders.</li>
+<li>To keep cache consistent, leaders asynchronously send cache maintenance messages to followers. A version number in message allows it to be ignored when arriving late.</li>
+</ul>
+<p><strong>Geographically</strong></p>
+<ul>
+<li>Cluster data center locations into a few regions where the intra-region latency is small. Store one copy of the social graph per region.</li>
+<li>Followers behave identically in all regions, forwarding read misses and writes to the local region's tier leader.</li>
+<li>Leaders query the local region's database regardless of whether master or slave. Writes are forwarded by the local leader to the leader in the master region.</li>
+<li>Master region is controlled separately for each shard and is automatically switched to recover from database failure. We prefer to locate all of the master databases in a single region, otherwise inverse write may introduce inter-region latency.</li>
+</ul>
+<p><img alt="architecture" src="../images/architecture.jpg" /></p>
+<h2 id="consistency">Consistency</h2>
+<ul>
+<li>After a write, TAO guarantees the eventual delivery of an invalidation or refill to all tiers.</li>
+<li>TAO reads marked as critical will be proxied to the master region for stronger consistency.</li>
+</ul>
+<h2 id="fault-tolerance">Fault Tolerance</h2>
+<ul>
+<li><strong>Database failures:</strong> When a master database is down, one of its slave is promoted to be the new master. When a slave database is down, cache misses are redirected to leaders in the master region.</li>
+<li><strong>Leader failures:</strong> Followers reroute read misses directly to the database and writes to a random replacement leader.</li>
+<li><strong>Invalidation and refill failures:</strong> If a follower is unreachable, leader persists messages and redeliver them later. If these messages are lost due to permanent leader failure, a bulk invalidation operation is used to invalidate all data of specific shard in followers.</li>
+<li><strong>Follower failures:</strong> Client requests are failed over to followers in other tiers.</li>
 </ul></div>
             </div>
         </div>
