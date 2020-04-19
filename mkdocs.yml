@@ -18,6 +18,7 @@ pages:
       - Storage:
         - bigtable: 'bigtable/bigtable.md'
         - f1: 'f1/f1.md'
+        - tao: 'tao/tao.md'
       - Data Processing:
         - mapreduce: 'mapreduce/mapreduce.md'
         - flume: 'flume/flume.md'
