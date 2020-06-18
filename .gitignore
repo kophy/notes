@@ -140,3 +140,4 @@ cython_debug/
 .Scripts
 Scripts/
 *.cfg
+*.Ds_Store
