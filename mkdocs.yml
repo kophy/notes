@@ -29,7 +29,7 @@ pages:
       - Cluster Management:
         - borg: 'borg/borg.md'
         - zookeeper: 'zookeeper/zookeeper.md'
-      - Low-level:
+      - Misc:
         - zfs: 'zfs/zfs.md'
     - Machine Learning:
       - Embedding:
