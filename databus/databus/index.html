@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../../img/favicon.ico">
-        <title>storm - kophy's notes</title>
+        <title>databus - kophy's notes</title>
         <link href="../../css/bootstrap.min.css" rel="stylesheet">
         <link href="../../css/font-awesome.min.css" rel="stylesheet">
         <link href="../../css/base.css" rel="stylesheet">
@@ -87,7 +87,7 @@
 </li>
             
 <li>
-    <a href="./" class="dropdown-item active">storm</a>
+    <a href="../../storm/storm/" class="dropdown-item">storm</a>
 </li>
     </ul>
   </li>
@@ -111,7 +111,7 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../databus/databus/" class="dropdown-item">databus</a>
+    <a href="./" class="dropdown-item active">databus</a>
 </li>
             
 <li>
@@ -160,17 +160,17 @@
                             </a>
                         </li>
                             <li class="nav-item">
-                                <a rel="prev" href="../../millwheel/millwheel/" class="nav-link">
+                                <a rel="prev" href="../../zookeeper/zookeeper/" class="nav-link">
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../../borg/borg/" class="nav-link">
+                                <a rel="next" href="../../zfs/zfs/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="https://github.com/kophy/Notes/edit/master/docs/storm/storm.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
+                                <a href="https://github.com/kophy/Notes/edit/master/docs/databus/databus.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
                             </li>
                     </ul>
                 </div>
@@ -190,19 +190,13 @@
     <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
         <ul class="nav flex-column">
             
-            <li class="nav-item" data-level="1"><a href="#storm-twitter" class="nav-link">Storm @Twitter</a>
+            <li class="nav-item" data-level="1"><a href="#databus-linkedins-scalable-consistent-change-data-capture-platform" class="nav-link">Databus: Linkedin’s Scalable Consistent Change Data Capture Platform</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-level="2"><a href="#background" class="nav-link">Background</a>
               <ul class="nav flex-column">
               </ul>
             </li>
-            
-            <li class="nav-item" data-level="1"><a href="#basics" class="nav-link">Basics</a>
-              <ul class="nav flex-column">
-              </ul>
-            </li>
-            
-            <li class="nav-item" data-level="1"><a href="#architecture" class="nav-link">Architecture</a>
-              <ul class="nav flex-column">
-            <li class="nav-item" data-level="2"><a href="#processing-semantics" class="nav-link">Processing Semantics</a>
+            <li class="nav-item" data-level="2"><a href="#architecture" class="nav-link">Architecture</a>
               <ul class="nav flex-column">
               </ul>
             </li>
@@ -213,42 +207,45 @@
 </div></div>
                     <div class="col-md-9" role="main">
 
-<h1 id="storm-twitter">Storm @Twitter</h1>
-<p><em>A real-time fault-tolerant and distributed stream data processing system.</em></p>
-<h1 id="basics">Basics</h1>
+<h1 id="databus-linkedins-scalable-consistent-change-data-capture-platform">Databus: Linkedin’s Scalable Consistent Change Data Capture Platform</h1>
+<p><em>A source-agnostic distributed change data capture system of LinkedIn's data processing pipeline.</em></p>
+<h2 id="background">Background</h2>
 <ul>
-<li>Storm data processing architecture consists of streams of tuples flowing through topologies. A topology is a directed graph where vertices represent computation and edges represent the data flow.</li>
-<li>Storm is used by groups inside Twitter like revenue, user services, search and content discovery. Most of topologies have &lt;3 stages.</li>
-<li>Storm runs on distributed cluster like Mesos, uses ZooKeeper to keep state and pulls data from queues like Kafka.</li>
+<li>Data systems are categorized as primary and derived data stores. A requirement from derived data stores is to capture, flow and process primary data changes.</li>
+<li>There are two families of solutions, (1) application-driven dual writes that lets application writes multiple data systems in parallel and  (2) database log mining that extracts changes from primary data store's transaction log. We choose (2) because it avoids complex coordination protocol for consistency and has single source-of-truth.</li>
 </ul>
-<h1 id="architecture">Architecture</h1>
+<h2 id="architecture">Architecture</h2>
 <h3 id="overview">Overview</h3>
 <ul>
-<li>Clients submit topologies to Nimbus, the master node of Storm.</li>
-<li>Nimbus distributes and coordinates the execution of topologies on worker nodes.</li>
-<li>Each worker node runs a Supervisor, which receives assignment from Nimbus and monitors the health of workers.</li>
-<li>Each worker node runs one or more worker processes. Each work process runs a JVM, in which it runs one or more executors made of tasks.</li>
-<li>Worker process serve as containers on host machines. Tasks provide intra-bolt/intra-spout parallelism and executors provide intra-topology parallelism.</li>
+<li>Logical Components: fetcher to extract changes, log store to cache change stream, snapshot store to store a moving snapshot of change stream and subscription client to pull changes and surface them to applications. <ul>
+<li>relay process = fetcher + in-memory log store</li>
+<li>bootstrap service = persistent log store + snapshot store</li>
 </ul>
-<p><img alt="architecture" src="../images/architecture.jpg" /></p>
-<h3 id="nimbus">Nimbus</h3>
-<ul>
-<li>Nimbus is a Thrift service. Topologies are Thrift objects.</li>
-<li>Nimbus stores topologies in ZooKeeper and Jar files of user codes on local disk of the Nimbus machine.</li>
-<li>Nimbus and Supervisor are fail-fast and stateless. States are kept in ZooKeeper or local disks.</li>
+</li>
+<li>Databus is externally-clocked. Each change set is annotated with a monotonically-increasing system change number (SCN) assigned by data source.</li>
+<li>Databus favors pull over push model because we need to keep SCN timelines for a large number consumers and it simplifies error handling.</li>
 </ul>
-<h3 id="workers">Workers</h3>
+<p><img alt="architecture" src="../images/architecture.png" /></p>
+<h3 id="relay">Relay</h3>
 <ul>
-<li>Each worker has two dedicated threads, a worker receive thread and a worker send thread, to route incoming and outgoing tuples.</li>
-<li>User logic thread runs actual task for input tuples and places output tuples to output queue.</li>
-<li>Executor send thread checks the task identifier of tuples in output queue and writes them to corresponding input queue(destination is same worker) or global transfer queue.</li>
+<li>The changes extracted by fetcher are serialized into binary format independent of sources (Avro). They are grouped within transaction boundaries, annotated with SCN and buffered in the transient log.</li>
 </ul>
-<p><img alt="inside worker" src="../images/inside%20worker.jpg" /></p>
-<h2 id="processing-semantics">Processing Semantics</h2>
 <ul>
-<li>Storm provides two processing semantics, "at least once" and "at most once".</li>
-<li>"At least once" is done by an "acker" bolt. It tracks the DAG of every tuple emitted by spout and acknowledges tasks when output tuple leaves topology.</li>
-<li>Storm generates 64-bit message id for each tuple. Acker bolt uses XOR checksum of message ids to avoid large memory usage for provenance tracking.</li>
+<li>The relay does not maintain consumer-related states. Subscription client maintains progress checkpoint and and pass on each pull request.</li>
+<li>To deploy a cluster of processes, we can let either (1) all relays independently connecting the data source or (2) one relay as leader and the rest followers pull changes from the leader.</li>
+<li>The change data is stored in a long-lived in-memory circular buffer using the on-wire serialization format. This enables high-throughput bulk-writes when serving pull requests and minimizes GC pressure (performance variance). The trade-off here is on-wire format needs more CPU resources for filtering.</li>
+<li>A skip list index is implemented on top of the buffer to efficiently serve pull requests to scan changes from a particular SCN.</li>
+<li>Consistency windows are marked explicitly so consumers can differentiate the cases of no updates and of no updates matching the filter. The end-of-window markers can also contain additional metadata like checksums.</li>
+</ul>
+<p><img alt="window" src="../images/window.png" /></p>
+<h3 id="bootstrap-service">Bootstrap Service</h3>
+<ul>
+<li>For consumers fallen behind a lot, it is more efficient to catch up with a snapshot of compacted changes, i.e. only the latest state of affected rows.</li>
+<li>Bootstrap service database has a persistent log store and a snapshot store because:<ul>
+<li>New changes are applied to the snapshot store while the consumer applications are reading (it is not practical to lock the snapshot store), so bootstrap service will replay changes after the snapshot read started for consistency.</li>
+<li>It ensures bootstrap service has enough write throughput to keep up the data source since appending to the log store is much cheaper than building the snapshot store.</li>
+</ul>
+</li>
 </ul></div>
             </div>
         </div>
