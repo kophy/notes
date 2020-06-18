@@ -30,6 +30,7 @@ pages:
         - borg: 'borg/borg.md'
         - zookeeper: 'zookeeper/zookeeper.md'
       - Misc:
+        - databus: 'databus/databus.md'
         - zfs: 'zfs/zfs.md'
     - Machine Learning:
       - Embedding:
