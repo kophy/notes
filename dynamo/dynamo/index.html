@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../../img/favicon.ico">
-        <title>flume - kophy's notes</title>
+        <title>dynamo - kophy's notes</title>
         <link href="../../css/bootstrap.min.css" rel="stylesheet">
         <link href="../../css/font-awesome.min.css" rel="stylesheet">
         <link href="../../css/base.css" rel="stylesheet">
@@ -49,7 +49,7 @@
 </li>
             
 <li>
-    <a href="../../dynamo/dynamo/" class="dropdown-item">dynamo</a>
+    <a href="./" class="dropdown-item active">dynamo</a>
 </li>
             
 <li>
@@ -75,7 +75,7 @@
 </li>
             
 <li>
-    <a href="./" class="dropdown-item active">flume</a>
+    <a href="../../flume/flume/" class="dropdown-item">flume</a>
 </li>
             
 <li>
@@ -164,17 +164,17 @@
                             </a>
                         </li>
                             <li class="nav-item">
-                                <a rel="prev" href="../../mapreduce/mapreduce/" class="nav-link">
+                                <a rel="prev" href="../../bigtable/bigtable/" class="nav-link">
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../../rdd/rdd/" class="nav-link">
+                                <a rel="next" href="../../espresso/espresso/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="https://github.com/kophy/Notes/edit/master/docs/flume/flume.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
+                                <a href="https://github.com/kophy/Notes/edit/master/docs/dynamo/dynamo.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
                             </li>
                     </ul>
                 </div>
@@ -194,21 +194,17 @@
     <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
         <ul class="nav flex-column">
             
-            <li class="nav-item" data-level="1"><a href="#flumejava-easy-efficient-data-parallel-pipelines" class="nav-link">FlumeJava: Easy, Efficient Data-Parallel Pipelines</a>
+            <li class="nav-item" data-level="1"><a href="#dynamo-amazons-highly-available-key-value-store" class="nav-link">Dynamo: Amazon’s Highly Available Key-value Store</a>
               <ul class="nav flex-column">
-            <li class="nav-item" data-level="2"><a href="#vs-mapreduce" class="nav-link">VS MapReduce</a>
-              <ul class="nav flex-column">
-              </ul>
-            </li>
-            <li class="nav-item" data-level="2"><a href="#basics" class="nav-link">Basics</a>
+            <li class="nav-item" data-level="2"><a href="#background" class="nav-link">Background</a>
               <ul class="nav flex-column">
               </ul>
             </li>
-            <li class="nav-item" data-level="2"><a href="#optimizer" class="nav-link">Optimizer</a>
+            <li class="nav-item" data-level="2"><a href="#introduction" class="nav-link">Introduction</a>
               <ul class="nav flex-column">
               </ul>
             </li>
-            <li class="nav-item" data-level="2"><a href="#executor" class="nav-link">Executor</a>
+            <li class="nav-item" data-level="2"><a href="#system-architecture" class="nav-link">System Architecture</a>
               <ul class="nav flex-column">
               </ul>
             </li>
@@ -219,50 +215,29 @@
 </div></div>
                     <div class="col-md-9" role="main">
 
-<h1 id="flumejava-easy-efficient-data-parallel-pipelines">FlumeJava: Easy, Efficient Data-Parallel Pipelines</h1>
-<p><em>The combination of high-level abstractions for parallel data and computation, deferred evaluation and optimization, and efficient parallel primitives yields an easy-to-use system that approaches the efficiency of hand-optimized pipelines.</em></p>
-<h2 id="vs-mapreduce">VS MapReduce</h2>
+<h1 id="dynamo-amazons-highly-available-key-value-store">Dynamo: Amazon’s Highly Available Key-value Store</h1>
+<p><em>A highly available key-value storage system for "always-on" experience.</em></p>
+<h2 id="background">Background</h2>
 <ul>
-<li>Real-life computations require a chain of MapReduce stages. FlumeJava can optimize the execution plan and choose implementation strategy(local loop, remote MapReduce, etc) when running the execution plan.</li>
-<li>FlumeJava is easier to develop and test. Parallel collections abstract away the details of data representation and parallel operations abstract away the implementation strategy.</li>
-<li>FlumeJava automatically deletes temporary intermediate files when no longer needed.</li>
+<li>The Amazon platform is built on top of tens of thousands of server and network components, where there are always a small but significant number of components failing at any given time.</li>
+<li>Some applications like shopping cart need always-available storage technologies for customer experience.</li>
 </ul>
-<h2 id="basics">Basics</h2>
+<h2 id="introduction">Introduction</h2>
 <ul>
-<li>Data:<ul>
-<li>immutable bag of elements <code>PCollection&lt;T&gt;</code>.</li>
-<li>immutable multi-map <code>PTable&lt;K, V&gt;</code>.</li>
+<li>Dynamo provides only simple key-value interface; no operations span multiple data items.</li>
+<li>Unlike traditional commercial systems putting importance on consistency, Dynamo sacrifices consistency under certain failure scenarios for availability.</li>
+<li>Dynamo uses a synthesis of well known techniques to achieve scalability and availability:</li>
 </ul>
-</li>
-<li>Operations:<ul>
-<li><code>parallelDo</code> for map/reduce.</li>
-<li><code>groupByKey</code> for shuffle.</li>
-<li><code>combineValues</code> is a special case of <code>parallelDo</code>. It is more efficient since MapReduce combiner is allowed.</li>
-<li><code>flatten</code> views a list of <code>PCollection&lt;T&gt;</code> as a single <code>PCollection&lt;T&gt;</code>(no copy).</li>
-<li><code>join</code> returns <code>PTable&lt;K, Tuple&lt;Collection&lt;V1&gt;, Collection&lt;V2&gt;&gt;&gt;</code> and is implemented with intermediate type <code>PTable&lt;K, TaggedUnion2&lt;V1, V2&gt;&gt;</code>.</li>
-</ul>
-</li>
-</ul>
-<h2 id="optimizer">Optimizer</h2>
-<h3 id="paralleldo-fusion">ParallelDo Fusion</h3>
+<p><img alt="summary" src="../images/summary.png" /></p>
+<h2 id="system-architecture">System Architecture</h2>
 <ul>
-<li>Producer-consumer fusion: replace <script type="math/tex">f(g(x))</script> with <script type="math/tex">(g + f \circ g)(x)</script>.</li>
-<li>Sibling fusion: replace <script type="math/tex">f(x) + g(x)</script> with <script type="math/tex">(f+g)(x)</script>.</li>
-</ul>
-<h3 id="mscr-fusion">MSCR Fusion</h3>
-<p>MSCR(MapShuffleCombineReduce) operation is the intermediate operation to help bridge the gap between(1) combinations of operations and (2) single MapReduces.</p>
-<p><img alt="MSCR" src="../images/MSCR.jpg" /></p>
-<h3 id="strategy">Strategy</h3>
-<p>The optimizers performs multiple passes over the execution plan to produce the fewest, most efficient MSCR operations.</p>
-<ol>
-<li>Sink Flattens: create opportunities for ParallelDo fusion.</li>
-<li>Lift CombineValues operations: CombineValues immediately follows GroupByKey is subject to ParallelDo fusion.</li>
-<li>Insert fusion blocks: for ParallelDos between two GroupByKeys, FlumeJava needs to estimate size of intermediate output and mark boundary to block ParallelDo fusion.</li>
-<li>Fuse ParallelDos.</li>
-<li>Fuse MSCRs.</li>
-</ol>
-<h2 id="executor">Executor</h2>
-<p>Batch execution: FlumeJava traverses the operations in the execution plan in forward topological order.Independent operations are operated simultaneously.</p></div>
+<li><strong>Consistent hashing:</strong> To scale incrementally, Dynamo uses consistent hashing to partition data. The principle advantage is that arrival/departure of a node only affects immediate neighbors.</li>
+<li><strong>Virtual node</strong>: Dynamo introduces the concept of virtual nodes to balance the load when membership changes and account for heterogeneity in the physical infrastructure (virtual nodes on same physical node are skipped in replication).</li>
+<li><strong>Data Versioning</strong>: Dynamo uses vector clocks(list of &lt;node, counter> pairs) to capture the causality between different  versions of the same object. If Dynamo can't resolve divergent versions, it will return all objects and let applications resolve the conflicts.</li>
+<li><strong>Sloppy quorum and hinted handoff:</strong> Dynamo uses quorum-based consistency protocol(R+W&gt;N),  but does not ensure strict quorum membership. When a node A is temporarily unavailable, another node B will help maintain the replica and deliver the replica to A when detecting A has recovered.</li>
+<li><strong>Replica synchronization:</strong> Dynamo anti-entropy protocol uses hash trees to reduce the amount of data need to be transferred to detect replica inconsistencies.</li>
+<li><strong>Gossip protocol:</strong> Each node contacts a random peer every second and two nodes reconcile their persisted membership change histories and views of failure state. To prevent logical partitions, some seed nodes are known to all nodes.</li>
+</ul></div>
             </div>
         </div>
 
