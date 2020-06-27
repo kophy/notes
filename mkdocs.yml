@@ -17,6 +17,7 @@ pages:
     - Infrastructure:
       - Storage:
         - bigtable: 'bigtable/bigtable.md'
+        - dynamo: 'dynamo/dynamo.md'
         - espresso: 'espresso/espresso.md'
         - f1: 'f1/f1.md'
         - tao: 'tao/tao.md'
