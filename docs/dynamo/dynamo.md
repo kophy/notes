@@ -5,7 +5,7 @@
 ## Background
 
 - The Amazon platform is built on top of tens of thousands of server and network components, where there are always a small but significant number of components failing at any given time.
-- Some applications like shopping cart need always-available storage technologies.
+- Some applications like shopping cart need always-available storage technologies for customer experience.
 
 ## Introduction
 
