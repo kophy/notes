@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../../img/favicon.ico">
-        <title>The Google File System - kophy's notes</title>
+        <title>gfs - kophy's notes</title>
         <link href="../../css/bootstrap.min.css" rel="stylesheet">
         <link href="../../css/font-awesome.min.css" rel="stylesheet">
         <link href="../../css/base.css" rel="stylesheet">
@@ -36,7 +36,7 @@
                             <li class="navitem">
                                 <a href="../.." class="nav-link">Home</a>
                             </li>
-                            <li class="dropdown">
+                            <li class="dropdown active">
                                 <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Infrastructure <b class="caret"></b></a>
                                 <ul class="dropdown-menu">
                                     
@@ -58,6 +58,10 @@
             
 <li>
     <a href="../../f1/f1/" class="dropdown-item">f1</a>
+</li>
+            
+<li>
+    <a href="./" class="dropdown-item active">gfs</a>
 </li>
             
 <li>
@@ -168,6 +172,16 @@
                             </a>
                         </li>
                             <li class="nav-item">
+                                <a rel="prev" href="../../f1/f1/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../../spanner/spanner/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a href="https://github.com/kophy/Notes/edit/master/docs/gfs/gfs.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
                             </li>
                     </ul>
@@ -190,6 +204,22 @@
             
             <li class="nav-item" data-level="1"><a href="#the-google-file-system" class="nav-link">The Google File System</a>
               <ul class="nav flex-column">
+            <li class="nav-item" data-level="2"><a href="#introduction" class="nav-link">Introduction</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#architecture" class="nav-link">Architecture</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#system-interactions" class="nav-link">System Interactions</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#master-operations" class="nav-link">Master Operations</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
               </ul>
             </li>
         </ul>
@@ -198,7 +228,33 @@
                     <div class="col-md-9" role="main">
 
 <h1 id="the-google-file-system">The Google File System</h1>
-<p><em>A scalable distributed file system for large distributed data-intensive applications.</em></p></div>
+<p><em>A scalable distributed file system for large distributed data-intensive applications.</em></p>
+<h2 id="introduction">Introduction</h2>
+<ul>
+<li>The design is driven by key observations different from earlier file system assumptions, including frequent component failures, huge files and  that most files are mutated by appending rather than overwriting.</li>
+<li>GFS provides a POSIX-like file system interface. It supports snapshot and record append operations(useful for multi-way merge and consumer/producer).</li>
+</ul>
+<h2 id="architecture">Architecture</h2>
+<ul>
+<li>A GFS cluster consists of a single master and multiple chunkservers and is accessed by multiple clients.</li>
+<li>Files are divided into fixed-sized chunks(64 MB, larger than typical) and each chunk has an immutable and globally unique id. Chunkservers store chunks as local Linux files and the master maintains all file system metadata.</li>
+<li>The master stores in memory three majors types of metadata: the file and chunk namespaces, the mapping from files to chunks and the locations of each chunk's replicas. The first two are also persisted in a replicated operation log(with checkpoints); the last one is polled from chunkservers at start time and kept up-to-date via heartbeat messages.</li>
+</ul>
+<p><img alt="architecture" src="../images/architecture.png" /></p>
+<h2 id="system-interactions">System Interactions</h2>
+<ul>
+<li>For mutations to a chunk, the master grants an extendable chunk lease to one of the replicas. The primary will pick a serial order for all mutations to the chunk and all replicas will follow this order.</li>
+<li>Control and data flows are decoupled to use the network efficiently. Control flows from the client to the primary and then to all secodaries,.Data is pushed linearly along a carefully picked chain of chunkservers in a pipelined fashion.</li>
+<li>GFS provides at-least-once semantics. A client retries when mutation fails, so replicas of the same chunk may contain different data including duplicates or paddings(not bytewise identical).</li>
+</ul>
+<h2 id="master-operations">Master Operations</h2>
+<ul>
+<li>GFS namespace is represented as a lookup table(with prefix compression) from full pathnames to metadata. Each file or directory has a read-write lock to ensure proper searialization.</li>
+<li>The master create chunk replicas for  initial creation, re-replication and rebalancing. It considers various factors when placing the replica, to maximizing data reliability/availability and network bandwidth utilization.</li>
+<li>When a file is deleted, the master logs the deletion immediately but deletes metadata after some delay(3 days, etc). Each chunkserver reports a subset of chunks in heartbeat messages, and the master replies whether these chunks can be deleted. This lazy approach is simple and reliable in a large-scale distributed system.</li>
+<li>The master maintains a version number for each chunk. Whenever the master grants a new lease on the chunk, it increases the version number and informs all the up-to-date replicas.</li>
+<li>For high availability, we have (1) monitoring infrastructure outside GFS to start a master and (2) "shadow" masters for read-only operations.</li>
+</ul></div>
             </div>
         </div>
 
