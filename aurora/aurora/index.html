@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../../img/favicon.ico">
-        <title>zookeeper - kophy's notes</title>
+        <title>aurora - kophy's notes</title>
         <link href="../../css/bootstrap.min.css" rel="stylesheet">
         <link href="../../css/font-awesome.min.css" rel="stylesheet">
         <link href="../../css/base.css" rel="stylesheet">
@@ -45,7 +45,7 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../aurora/aurora/" class="dropdown-item">aurora</a>
+    <a href="./" class="dropdown-item active">aurora</a>
 </li>
             
 <li>
@@ -117,7 +117,7 @@
 </li>
             
 <li>
-    <a href="./" class="dropdown-item active">zookeeper</a>
+    <a href="../../zookeeper/zookeeper/" class="dropdown-item">zookeeper</a>
 </li>
     </ul>
   </li>
@@ -176,17 +176,17 @@
                             </a>
                         </li>
                             <li class="nav-item">
-                                <a rel="prev" href="../../borg/borg/" class="nav-link">
+                                <a rel="prev" href="../.." class="nav-link">
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../../databus/databus/" class="nav-link">
+                                <a rel="next" href="../../bigtable/bigtable/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="https://github.com/kophy/Notes/edit/master/docs/zookeeper/zookeeper.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
+                                <a href="https://github.com/kophy/Notes/edit/master/docs/aurora/aurora.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
                             </li>
                     </ul>
                 </div>
@@ -206,17 +206,17 @@
     <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
         <ul class="nav flex-column">
             
-            <li class="nav-item" data-level="1"><a href="#zookeeper-wait-free-coordination-for-internet-scale-systems" class="nav-link">ZooKeeper: Wait-free coordination for Internet-scale systems</a>
+            <li class="nav-item" data-level="1"><a href="#amazon-aurora-design-considerations-for-high-throughput-cloud-native-relational-databases" class="nav-link">Amazon Aurora: Design Considerations for High Throughput Cloud-Native Relational Databases</a>
               <ul class="nav flex-column">
-            <li class="nav-item" data-level="2"><a href="#basics" class="nav-link">Basics</a>
-              <ul class="nav flex-column">
-              </ul>
-            </li>
-            <li class="nav-item" data-level="2"><a href="#service-overview" class="nav-link">Service Overview</a>
+            <li class="nav-item" data-level="2"><a href="#introduction" class="nav-link">Introduction</a>
               <ul class="nav flex-column">
               </ul>
             </li>
-            <li class="nav-item" data-level="2"><a href="#implementation" class="nav-link">Implementation</a>
+            <li class="nav-item" data-level="2"><a href="#architecture" class="nav-link">Architecture</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#extra-notes" class="nav-link">Extra Notes</a>
               <ul class="nav flex-column">
               </ul>
             </li>
@@ -227,39 +227,34 @@
 </div></div>
                     <div class="col-md-9" role="main">
 
-<h1 id="zookeeper-wait-free-coordination-for-internet-scale-systems">ZooKeeper: Wait-free coordination for Internet-scale systems</h1>
-<p><em>A service for coordinating processes of distributed applications.</em></p>
-<h2 id="basics">Basics</h2>
+<h1 id="amazon-aurora-design-considerations-for-high-throughput-cloud-native-relational-databases">Amazon Aurora: Design Considerations for High Throughput Cloud-Native Relational Databases</h1>
+<p><em>A cloud-native relational database service for OLTP workloads.</em></p>
+<h2 id="introduction">Introduction</h2>
 <ul>
-<li>ZooKeeper provides a coordination kernel for clients to implement primitives for configuration, group membership, leader election and distributed lock.</li>
-<li>ZooKeeper implements non-blocking API, so a client can have multiple outstanding operations at a time.</li>
-<li>ZooKeeper guarantees FIFO client ordering for all operations and linearizable writes.</li>
-<li>ZooKeeper target workload read to write ration is 2:1 to 100:1.</li>
+<li>We believe the central constraint in high throughput data processing has moved from compute and storage to the network.</li>
+<li>Aurora uses a novel architecture with a fleet of database instances and storage service. Several database functions(redo logging, crash recovery, etc) are offloaded to the storage service, which is like a virtualized segmented redo log (shared-disk architecture).</li>
+<li><strong>Key idea:</strong> the log is the database; any page that the storage system materializes are simply a cache of log application.</li>
 </ul>
-<h2 id="service-overview">Service Overview</h2>
-<h3 id="znode">znode</h3>
+<h2 id="architecture">Architecture</h2>
 <ul>
-<li>ZooKeeper provides the abstraction of a set of data nodes(znodes) organized by hierarchical namespaces.</li>
-<li>znodes are in-memory data node stored in ZooKeeper. A znode can be regular or ephemeral(automatically removed when corresponding session terminates).</li>
-<li>znodes are not for general data storage. Instead, they are used to store metadata or configuration of applications(typically 1MB).</li>
+<li>To tolerate AZ failure, Aurora replicates each data item 6 ways across 3AZs with 2 copies in each AZ.</li>
+<li>Database volume is partitioned into 10GB segments. Each segment is replicated 6 times into a Protection Group.</li>
+<li>The only writes that cross the network are redo log records, so network load is drastically reduced despite amplifying write for replication. </li>
+<li>Storage nodes gossips with peers to fill gaps in received log records. Durable log application happens at the storage nodes continuously and  asynchronously.</li>
+<li>Each log record has a monotonically-increasing Log Sequence Number(LSN).</li>
+<li>Instead of 2PC protocol, Aurora maintains points of consistency and durability and advances them when receiving acknowledgements for storage requests.<ul>
+<li>Durability: the highest LSN at which all prior log records are available.</li>
+<li>Consistency: each transaction is broken up to mini-transactions, and the final log record in a mini-transaction is a consistency point.</li>
 </ul>
-<p><img alt="znode" src="../images/znode.jpg" /></p>
-<h3 id="client-api">Client API</h3>
+</li>
+<li>Normally  read quorum is not needed since the database feeds log records to storage nodes and tracks progress.</li>
+</ul>
+<p><img alt="architecture" src="../images/architecture.png" />:</p>
+<h2 id="extra-notes">Extra Notes</h2>
 <ul>
-<li>ZooKeeper provides API for client to manipulating znodes like in a file system.</li>
-<li>For read methods, ZooKeeper implements watches to allow client to receive notification of changes.  Watches are one-time triggers associated with a session(for example, <code>getData(path, watch)</code>).</li>
-<li>For write methods, ZooKeeper accepts an optional expected version number(for example, <code>setData(path, data, version)</code>). If set, the write succeeds only if the actual version number of znode matches the expected one.</li>
-<li>ZooKeeper client maintains session with ZooKeeper through heartbeat messages.</li>
-</ul>
-<h2 id="implementation">Implementation</h2>
-<ul>
-<li>ZooKeeper service comprises an ensemble of servers that each has replicated ZooKeeper data. One is leader and the rest are followers.</li>
-<li>Read requests are handled locally at each server, so it may return stale data since some committed transactions are not applied on that server yet.</li>
-<li>Write requests are forwarded to leader. Leader (1) calculates the new system state to transform write requests into idempotent transactions and (2) broadcast the state changes to other servers through atomic broadcast protocol ZAB.</li>
-<li>ZooKeeper uses TCP so message order is maintained by network.</li>
-<li>ZooKeeper uses replay log and periodic snapshots for recoverability. ZooKeeper state is not locked when taking the snapshot, but idempotent transactions can be applied twice as long as in order.</li>
-</ul>
-<p><img alt="components" src="../images/components.jpg" /></p></div>
+<li>In shared-disk architecture, all data is shared by all nodes. In shared-nothing architecture, each node manages a subset of data.</li>
+<li>It is hard to use change buffer in shared-disk architecture, so writes are penalized when there are secondary indexes.</li>
+</ul></div>
             </div>
         </div>
 
