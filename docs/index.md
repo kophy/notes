@@ -1,2 +1,1 @@
-> A future is not given to you.  
-> It is something you must take for yourself.
+> "And the universe said you are the universe tasting itself, talking to itself, reading its own code."

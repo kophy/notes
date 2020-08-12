@@ -16,6 +16,7 @@ pages:
     - Home: 'index.md'
     - Infrastructure:
       - Storage:
+        - aurora: 'aurora/aurora.md'
         - bigtable: 'bigtable/bigtable.md'
         - dynamo: 'dynamo/dynamo.md'
         - espresso: 'espresso/espresso.md'
