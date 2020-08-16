@@ -36,6 +36,7 @@ pages:
         - zookeeper: 'zookeeper/zookeeper.md'
       - Misc:
         - databus: 'databus/databus.md'
+        - kafka: 'kafka/kafka.md'
         - zfs: 'zfs/zfs.md'
     - Machine Learning:
       - Embedding:
