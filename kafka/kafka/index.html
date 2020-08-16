@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../../img/favicon.ico">
-        <title>aurora - kophy's notes</title>
+        <title>kafka - kophy's notes</title>
         <link href="../../css/bootstrap.min.css" rel="stylesheet">
         <link href="../../css/font-awesome.min.css" rel="stylesheet">
         <link href="../../css/base.css" rel="stylesheet">
@@ -45,7 +45,7 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="./" class="dropdown-item active">aurora</a>
+    <a href="../../aurora/aurora/" class="dropdown-item">aurora</a>
 </li>
             
 <li>
@@ -131,7 +131,7 @@
 </li>
             
 <li>
-    <a href="../../kafka/kafka/" class="dropdown-item">kafka</a>
+    <a href="./" class="dropdown-item active">kafka</a>
 </li>
             
 <li>
@@ -180,17 +180,17 @@
                             </a>
                         </li>
                             <li class="nav-item">
-                                <a rel="prev" href="../.." class="nav-link">
+                                <a rel="prev" href="../../databus/databus/" class="nav-link">
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../../bigtable/bigtable/" class="nav-link">
+                                <a rel="next" href="../../zfs/zfs/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="https://github.com/kophy/Notes/edit/master/docs/aurora/aurora.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
+                                <a href="https://github.com/kophy/Notes/edit/master/docs/kafka/kafka.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
                             </li>
                     </ul>
                 </div>
@@ -210,9 +210,9 @@
     <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
         <ul class="nav flex-column">
             
-            <li class="nav-item" data-level="1"><a href="#amazon-aurora-design-considerations-for-high-throughput-cloud-native-relational-databases" class="nav-link">Amazon Aurora: Design Considerations for High Throughput Cloud-Native Relational Databases</a>
+            <li class="nav-item" data-level="1"><a href="#kafka-a-distributed-messaging-system-for-log-processing" class="nav-link">Kafka: a Distributed Messaging System for Log Processing</a>
               <ul class="nav flex-column">
-            <li class="nav-item" data-level="2"><a href="#introduction" class="nav-link">Introduction</a>
+            <li class="nav-item" data-level="2"><a href="#background" class="nav-link">Background</a>
               <ul class="nav flex-column">
               </ul>
             </li>
@@ -220,7 +220,7 @@
               <ul class="nav flex-column">
               </ul>
             </li>
-            <li class="nav-item" data-level="2"><a href="#extra-notes" class="nav-link">Extra Notes</a>
+            <li class="nav-item" data-level="2"><a href="#design-choices" class="nav-link">Design choices</a>
               <ul class="nav flex-column">
               </ul>
             </li>
@@ -231,33 +231,30 @@
 </div></div>
                     <div class="col-md-9" role="main">
 
-<h1 id="amazon-aurora-design-considerations-for-high-throughput-cloud-native-relational-databases">Amazon Aurora: Design Considerations for High Throughput Cloud-Native Relational Databases</h1>
-<p><em>A cloud-native relational database service for OLTP workloads.</em></p>
-<h2 id="introduction">Introduction</h2>
+<h1 id="kafka-a-distributed-messaging-system-for-log-processing">Kafka: a Distributed Messaging System for Log Processing</h1>
+<p><em>A distributed messaging system for collecting and delivering high volumes of log data with low latency.</em></p>
+<h2 id="background">Background</h2>
 <ul>
-<li>We believe the central constraint in high throughput data processing has moved from compute and storage to the network.</li>
-<li>Aurora uses a novel architecture with a fleet of database instances and storage service. Several database functions(redo logging, crash recovery, etc) are offloaded to the storage service, which is like a virtualized segmented redo log (shared-disk architecture).</li>
-<li><strong>Key idea:</strong> the log is the database; any page that the storage system materializes are simply a cache of log application.</li>
+<li>Online and offline log consumption has been a critical component of data pipelines. The volume of log data is orders of magnitude larger than "real" data because of enrichments and annotations.</li>
+<li>Traditional log aggregators physically scraps log files off production servers for analysis, which does not support real-time applications.</li>
+<li>Messaging systems tend not to be a good fit for log processing because of limited throughput, weak distributed support and assuming a small queue of unconsumed messages.</li>
 </ul>
 <h2 id="architecture">Architecture</h2>
 <ul>
-<li>To tolerate AZ failure, Aurora replicates each data item 6 ways across 3AZs with 2 copies in each AZ.</li>
-<li>Database volume is partitioned into 10GB segments. Each segment is replicated 6 times into a Protection Group.</li>
-<li>The only writes that cross the network are redo log records, so network load is drastically reduced despite amplifying write for replication. </li>
-<li>Storage nodes gossips with peers to fill gaps in received log records. Durable log application happens at the storage nodes continuously and  asynchronously.</li>
-<li>Each log record has a monotonically-increasing Log Sequence Number(LSN).</li>
-<li>Instead of 2PC protocol, Aurora maintains points of consistency and durability and advances them when receiving acknowledgements for storage requests.<ul>
-<li>Durability: the highest LSN at which all prior log records are available.</li>
-<li>Consistency: each transaction is broken up to mini-transactions, and the final log record in a mini-transaction is a consistency point.</li>
+<li>A topic is divided into multiple partitions; each partition is stored as a set of segment files(e.g. 1GB) at brokers.</li>
+<li>A producer publishes messages to a topic. The broker appends the received message to the last segment file.</li>
+<li>A consumer subscribes to one or more topics and pulls messages from the brokers.</li>
+<li>A consumer group jointly consumes a set of topics; each message is delivered to only one consumer. Coordination and state persistence(ownership, offset) are done via Zookeeper.</li>
+<li>In general, Kafka only guarantees at-least-once delivery.</li>
 </ul>
-</li>
-<li>Normally  read quorum is not needed since the database feeds log records to storage nodes and tracks progress.</li>
-</ul>
-<p><img alt="architecture" src="../images/architecture.png" />:</p>
-<h2 id="extra-notes">Extra Notes</h2>
+<p><img alt="architecture" src="../images/architecture.png" /></p>
+<h2 id="design-choices">Design choices</h2>
 <ul>
-<li>In shared-disk architecture, all data is shared by all nodes. In shared-nothing architecture, each node manages a subset of data.</li>
-<li>It is hard to use change buffer in shared-disk architecture, so writes are penalized when there are secondary indexes.</li>
+<li>Each message is addressed by the logical offset rather than message id, which avoids the overhead of maintaining index.</li>
+<li>Kafka relies on file system page cache instead of explicit caching messages, which avoids double buffering and is leverages operating system caching heuristics(write-through caching and read-ahead).</li>
+<li>Optimize the network access by using <code>sendfile()</code> API, which directly transfer bytes from a file channel to a socket channel.</li>
+<li>Pull model simplifies broker(as offset is maintained by consumer) and allows consumer to rewind back to an old offset and re-consume data. Kafka</li>
+<li>Kafka simplifies coordination of consumer group by: (1) allowing only one consumer to consume a partition at any given time(over-partition if necessary) and (2) let consumers coordinate via Zookeeper in a decentralized fashion.</li>
 </ul></div>
             </div>
         </div>
