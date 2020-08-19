@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../../img/favicon.ico">
-        <title>storm - kophy's notes</title>
+        <title>pregel - kophy's notes</title>
         <link href="../../css/bootstrap.min.css" rel="stylesheet">
         <link href="../../css/font-awesome.min.css" rel="stylesheet">
         <link href="../../css/base.css" rel="stylesheet">
@@ -103,11 +103,11 @@
 </li>
             
 <li>
-    <a href="../../pregel/pregel/" class="dropdown-item">pregel</a>
+    <a href="./" class="dropdown-item active">pregel</a>
 </li>
             
 <li>
-    <a href="./" class="dropdown-item active">storm</a>
+    <a href="../../storm/storm/" class="dropdown-item">storm</a>
 </li>
     </ul>
   </li>
@@ -184,17 +184,17 @@
                             </a>
                         </li>
                             <li class="nav-item">
-                                <a rel="prev" href="../../pregel/pregel/" class="nav-link">
+                                <a rel="prev" href="../../millwheel/millwheel/" class="nav-link">
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../../borg/borg/" class="nav-link">
+                                <a rel="next" href="../../storm/storm/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="https://github.com/kophy/Notes/edit/master/docs/storm/storm.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
+                                <a href="https://github.com/kophy/Notes/edit/master/docs/pregel/pregel.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
                             </li>
                     </ul>
                 </div>
@@ -214,19 +214,17 @@
     <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
         <ul class="nav flex-column">
             
-            <li class="nav-item" data-level="1"><a href="#storm-twitter" class="nav-link">Storm @Twitter</a>
+            <li class="nav-item" data-level="1"><a href="#pregel-a-system-for-large-scale-graph-processing" class="nav-link">Pregel: A System for Large-Scale Graph Processing</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-level="2"><a href="#background" class="nav-link">Background</a>
               <ul class="nav flex-column">
               </ul>
             </li>
-            
-            <li class="nav-item" data-level="1"><a href="#basics" class="nav-link">Basics</a>
+            <li class="nav-item" data-level="2"><a href="#computation-model" class="nav-link">Computation Model</a>
               <ul class="nav flex-column">
               </ul>
             </li>
-            
-            <li class="nav-item" data-level="1"><a href="#architecture" class="nav-link">Architecture</a>
-              <ul class="nav flex-column">
-            <li class="nav-item" data-level="2"><a href="#processing-semantics" class="nav-link">Processing Semantics</a>
+            <li class="nav-item" data-level="2"><a href="#implementation" class="nav-link">Implementation</a>
               <ul class="nav flex-column">
               </ul>
             </li>
@@ -237,42 +235,38 @@
 </div></div>
                     <div class="col-md-9" role="main">
 
-<h1 id="storm-twitter">Storm @Twitter</h1>
-<p><em>A real-time fault-tolerant and distributed stream data processing system.</em></p>
-<h1 id="basics">Basics</h1>
+<h1 id="pregel-a-system-for-large-scale-graph-processing">Pregel: A System for Large-Scale Graph Processing</h1>
+<p><em>A scalable and fault-tolerant computational model for distributed processing of large graphs.</em></p>
+<h2 id="background">Background</h2>
 <ul>
-<li>Storm data processing architecture consists of streams of tuples flowing through topologies. A topology is a directed graph where vertices represent computation and edges represent the data flow.</li>
-<li>Storm is used by groups inside Twitter like revenue, user services, search and content discovery. Most of topologies have &lt;3 stages.</li>
-<li>Storm runs on distributed cluster like Mesos, uses ZooKeeper to keep state and pulls data from queues like Kafka.</li>
+<li>Graph algorithms often exhibit poor locality of memory access, ittle work per vertex, and a changing degree of parallelism.</li>
+<li>There is no general-purpose system for implementing arbitrary graph algorithms over arbitrary graph representations in a large-scale distributed environment.</li>
 </ul>
-<h1 id="architecture">Architecture</h1>
-<h3 id="overview">Overview</h3>
+<h2 id="computation-model">Computation Model</h2>
 <ul>
-<li>Clients submit topologies to Nimbus, the master node of Storm.</li>
-<li>Nimbus distributes and coordinates the execution of topologies on worker nodes.</li>
-<li>Each worker node runs a Supervisor, which receives assignment from Nimbus and monitors the health of workers.</li>
-<li>Each worker node runs one or more worker processes. Each work process runs a JVM, in which it runs one or more executors made of tasks.</li>
-<li>Worker process serve as containers on host machines. Tasks provide intra-bolt/intra-spout parallelism and executors provide intra-topology parallelism.</li>
+<li>A Pregel program has input to initialize graph, supersteps separated by global synchronization points and output.</li>
+<li>Each vertex/edge has an identifier and a modifiable user-defined state. The edges are associated with source vertices.</li>
+<li>Pregel uses message passing model, so latency is amortized by batching messages. In a superstep,<ul>
+<li>Pregel invokes a user-defined function <code>Compute()</code> for each vertex <script type="math/tex">V</script>, conceptually in parallel.</li>
+<li><code>Compute()</code> can read messages sent to <script type="math/tex">V</script> in superstep <script type="math/tex">S-1</script>, send messages to other vertices that will be received in superstep <script type="math/tex">S + 1</script>, and modify the state of <script type="math/tex">V</script> and its outgoing edges.</li>
 </ul>
-<p><img alt="architecture" src="../images/architecture.jpg" /></p>
-<h3 id="nimbus">Nimbus</h3>
-<ul>
-<li>Nimbus is a Thrift service. Topologies are Thrift objects.</li>
-<li>Nimbus stores topologies in ZooKeeper and Jar files of user codes on local disk of the Nimbus machine.</li>
-<li>Nimbus and Supervisor are fail-fast and stateless. States are kept in ZooKeeper or local disks.</li>
+</li>
+<li>
+<script type="math/tex">V</script> may deactivate itself(if no further work) or be reactivated by a message. The program terminates when vertices are inactive and there are no messages in transit.</li>
+<li>Pregel supports aggregators for global information. Each vertex provides a value to an aggregator in superstep <script type="math/tex">S</script>, the system aggregates received values and the result is made available to all vertices in superstep <script type="math/tex">S+1</script>.</li>
+<li>Users can define combiners to combine several messages for a vertex, thus reducing the number of messages must be transmitted and buffered.</li>
 </ul>
-<h3 id="workers">Workers</h3>
+<p><img alt="max-value" src="../images/max-value.png" /></p>
+<h2 id="implementation">Implementation</h2>
 <ul>
-<li>Each worker has two dedicated threads, a worker receive thread and a worker send thread, to route incoming and outgoing tuples.</li>
-<li>User logic thread runs actual task for input tuples and places output tuples to output queue.</li>
-<li>Executor send thread checks the task identifier of tuples in output queue and writes them to corresponding input queue(destination is same worker) or global transfer queue.</li>
+<li>A Pregel program runs as one master and multiple workers.<ul>
+<li>For initialization, the master assigns a part of graph and user input to each worker.</li>
+<li>For supersteps, a worker calls <code>Compute()</code> for each active vertices. Messages are sent asynchronously but delivered before the end of superstep. A worker also maintains partially reduced aggregators for its parts.</li>
+<li>At the end of each superstep, workers form a tree to reduce partially reduced aggregators into global values and send to the master. Compared with pipelining with a chain of workers, tree-based reduction can parallelize the use of CPUs.</li>
 </ul>
-<p><img alt="inside worker" src="../images/inside%20worker.jpg" /></p>
-<h2 id="processing-semantics">Processing Semantics</h2>
-<ul>
-<li>Storm provides two processing semantics, "at least once" and "at most once".</li>
-<li>"At least once" is done by an "acker" bolt. It tracks the DAG of every tuple emitted by spout and acknowledges tasks when output tuple leaves topology.</li>
-<li>Storm generates 64-bit message id for each tuple. Acker bolt uses XOR checksum of message ids to avoid large memory usage for provenance tracking.</li>
+</li>
+<li><strong>Scalability:</strong> The size of the master's data structures is proportional to the number of partitions instead of vertices/edges.</li>
+<li><strong>Fault-tolerance</strong>: The master instructs workers to checkpoint states at the beginning of a superstep. If detecting failed workers via pings, the master reassigns graph partitions and let workers restart from the most recent checkpoint.</li>
 </ul></div>
             </div>
         </div>
