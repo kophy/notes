@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../../img/favicon.ico">
-        <title>zfs - kophy's notes</title>
+        <title>flink - kophy's notes</title>
         <link href="../../css/bootstrap.min.css" rel="stylesheet">
         <link href="../../css/font-awesome.min.css" rel="stylesheet">
         <link href="../../css/base.css" rel="stylesheet">
@@ -87,7 +87,7 @@
 </li>
             
 <li>
-    <a href="../../flink/flink/" class="dropdown-item">flink</a>
+    <a href="./" class="dropdown-item active">flink</a>
 </li>
             
 <li>
@@ -143,7 +143,7 @@
 </li>
             
 <li>
-    <a href="./" class="dropdown-item active">zfs</a>
+    <a href="../../zfs/zfs/" class="dropdown-item">zfs</a>
 </li>
     </ul>
   </li>
@@ -188,17 +188,17 @@
                             </a>
                         </li>
                             <li class="nav-item">
-                                <a rel="prev" href="../../kafka/kafka/" class="nav-link">
+                                <a rel="prev" href="../../mapreduce/mapreduce/" class="nav-link">
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../../word2vec/word2vec/" class="nav-link">
+                                <a rel="next" href="../../flume/flume/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="https://github.com/kophy/Notes/edit/master/docs/zfs/zfs.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
+                                <a href="https://github.com/kophy/Notes/edit/master/docs/flink/flink.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
                             </li>
                     </ul>
                 </div>
@@ -218,17 +218,17 @@
     <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
         <ul class="nav flex-column">
             
-            <li class="nav-item" data-level="1"><a href="#zettabyte-file-system" class="nav-link">Zettabyte File System</a>
+            <li class="nav-item" data-level="1"><a href="#apache-flink-stream-and-batch-processing-in-a-single-engine" class="nav-link">Apache Flink: Stream and Batch Processing in a Single Engine</a>
               <ul class="nav flex-column">
-            <li class="nav-item" data-level="2"><a href="#features" class="nav-link">Features</a>
-              <ul class="nav flex-column">
-              </ul>
-            </li>
-            <li class="nav-item" data-level="2"><a href="#concepts" class="nav-link">Concepts</a>
+            <li class="nav-item" data-level="2"><a href="#introduction" class="nav-link">Introduction</a>
               <ul class="nav flex-column">
               </ul>
             </li>
-            <li class="nav-item" data-level="2"><a href="#implementation" class="nav-link">Implementation</a>
+            <li class="nav-item" data-level="2"><a href="#system-architecture" class="nav-link">System Architecture</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#common-fabric" class="nav-link">Common Fabric</a>
               <ul class="nav flex-column">
               </ul>
             </li>
@@ -239,54 +239,31 @@
 </div></div>
                     <div class="col-md-9" role="main">
 
-<h1 id="zettabyte-file-system">Zettabyte File System</h1>
-<p><em>A new file system with strong data integrity, simple administration and immense capacity.</em></p>
-<h2 id="features">Features</h2>
+<h1 id="apache-flink-stream-and-batch-processing-in-a-single-engine">Apache Flink: Stream and Batch Processing in a Single Engine</h1>
+<p><em>A unified system for stream and batch data processing.</em></p>
+<h2 id="introduction">Introduction</h2>
 <ul>
-<li>redivision of labor between file system and volume manager</li>
-<li>pooled storage<ul>
-<li>multiple file systems share a pool of storage devices</li>
-<li>decouple file systems from physical storage</li>
+<li>Data processing systems usually treat streams as batches, ingoring the timely and continuous nature of data production.</li>
+<li>Flink embraces stream processing as the unified model in programming model and execution engine. Different types of computations  start processing at different points in a durable stream and maintain different forms of states.</li>
+<li>Flink uses a streaming dataflow engine as the core runtime engine, and builds stream and batch APIs on top.</li>
 </ul>
-</li>
-<li>immense capacity<ul>
-<li>128-bit block addresses</li>
-</ul>
-</li>
-<li>always consistent on-disk data<ul>
-<li>transactional copy-on-write model</li>
-</ul>
-</li>
-<li>data integrity<ul>
-<li>checksum all on-disk data</li>
-</ul>
-</li>
-</ul>
-<h2 id="concepts">Concepts</h2>
+<h2 id="system-architecture">System Architecture</h2>
 <ul>
-<li>On-disk data and metadata are stored in a tree of blocks rooted at <em>uberblock</em>. Data blocks are the leaves of the tree.</li>
-<li>Each block is checksummed before written to disk. The checksum is stored in the block's parent indirect block. <em>Uberblock</em> stores checksum in itself.</li>
+<li>A Flink cluster has three types of processes: client, JobManager and TaskManager.</li>
+<li>Client transforms program code to dataflow graph and submits to Job Manager.</li>
+<li>JobManager coordinates the distributed execution of the dataflow. It tracks the state and progress of each
+  operator and stream, schedules new operators, and coordinates checkpoints and recovery.</li>
+<li>TaskManager executes one or more operators that produce streams, and reports on their status to JobManager. The TaskManagers maintain the buffer pools to buffer or materialize the streams and the network connections to exchange data streams between operators.</li>
 </ul>
-<h2 id="implementation">Implementation</h2>
-<p><img alt="Traditional file system vs ZFS" src="../images/block-diagram.jpg" />
-- SPA handles block allocation and I/O; exports virtually addressed, explicitly allocated and freed blocks to DMU
-- DMU turns virtually addressed blocks into transactional object interface
-- ZPL implements posix file system on DMU objects</p>
-<h3 id="spa-storage-pool-allocator">SPA (Storage Pool Allocator)</h3>
+<p><img alt="model" src="../images/model.png" /></p>
+<h2 id="common-fabric">Common Fabric</h2>
 <ul>
-<li>verify block checksum when reading and update when writing</li>
-<li>use slab allocator to prevent memory fragmentation (copy-on-write file system needs big contiguous chunks to write new blocks)</li>
-</ul>
-<h3 id="dmu-data-management-unit">DMU (Data Management Unit)</h3>
-<ul>
-<li>when a block is written, allocate a new block and copy modified content into the new block</li>
-<li>transaction is "rippling" copy-on-write from data block to <em>uberblock</em></li>
-<li>group transactions together so uberblock and indirect blocks can be rewritten once for many data block writes</li>
-</ul>
-<p><img alt="Copy on write" src="../images/copy-on-write.jpg" /></p>
-<h3 id="zpl-zfs-posix-layer">ZPL (ZFS Posix Layer)</h3>
-<ul>
-<li>use intent log to avoid losing writes before system crashes</li>
+<li>All Flink programs compile down to dataflow graphs. A dataflow graph is a DAG of stateful operators and intermediate data streams(may or may not be materialized on disk) for data exchange.</li>
+<li>Intermediate data streams can be pipelined (to avoid materialization) or blocking (to split production and consumption into different stages).</li>
+<li>Producer stores data records in buffers. A buffer is sent to a consumer when (1) it is full or (2) timeout. Latency/throughput can be configured with buffer size.</li>
+<li>Operators may ingest control events(checkpoint barriers, watermarks, iteration barries) in the data stream. For example, Flink uses Asynchronous Barrier Snapshotting(ABS) to take a consistent snapshot of all operators without halting the execution.</li>
+<li>Flink offers exactly-once-processing and deals with failures via checkpointing and partial re-execution.</li>
+<li>Flink does not provide ordering guarantees and operators are responsible for dealing with out-of-order records.</li>
 </ul></div>
             </div>
         </div>
