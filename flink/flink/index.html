@@ -243,7 +243,7 @@
 <p><em>A unified system for stream and batch data processing.</em></p>
 <h2 id="introduction">Introduction</h2>
 <ul>
-<li>Data processing systems usually treat streams as batches, ingoring the timely and continuous nature of data production.</li>
+<li>Data processing systems usually treat streams as batches, ignoring the timely and continuous nature of data production.</li>
 <li>Flink embraces stream processing as the unified model in programming model and execution engine. Different types of computations  start processing at different points in a durable stream and maintain different forms of states.</li>
 <li>Flink uses a streaming dataflow engine as the core runtime engine, and builds stream and batch APIs on top.</li>
 </ul>
@@ -261,7 +261,7 @@
 <li>All Flink programs compile down to dataflow graphs. A dataflow graph is a DAG of stateful operators and intermediate data streams(may or may not be materialized on disk) for data exchange.</li>
 <li>Intermediate data streams can be pipelined (to avoid materialization) or blocking (to split production and consumption into different stages).</li>
 <li>Producer stores data records in buffers. A buffer is sent to a consumer when (1) it is full or (2) timeout. Latency/throughput can be configured with buffer size.</li>
-<li>Operators may ingest control events(checkpoint barriers, watermarks, iteration barries) in the data stream. For example, Flink uses Asynchronous Barrier Snapshotting(ABS) to take a consistent snapshot of all operators without halting the execution.</li>
+<li>Operators may ingest control events(checkpoint barriers, watermarks, iteration barriers) in the data stream. For example, Flink uses Asynchronous Barrier Snapshotting(ABS) to take a consistent snapshot of all operators without halting the execution.</li>
 <li>Flink offers exactly-once-processing and deals with failures via checkpointing and partial re-execution.</li>
 <li>Flink does not provide ordering guarantees and operators are responsible for dealing with out-of-order records.</li>
 </ul></div>
