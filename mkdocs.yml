@@ -26,6 +26,7 @@ pages:
         - tao: 'tao/tao.md'
       - Data Processing:
         - mapreduce: 'mapreduce/mapreduce.md'
+        - flink: 'flink/flink.md'
         - flume: 'flume/flume.md'
         - rdd: 'rdd/rdd.md'
         - d-stream: 'd-stream/d-stream.md'
