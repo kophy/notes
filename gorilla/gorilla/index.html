@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../../img/favicon.ico">
-        <title>predicting-clicks - kophy's notes</title>
+        <title>gorilla - kophy's notes</title>
         <link href="../../css/bootstrap.min.css" rel="stylesheet">
         <link href="../../css/font-awesome.min.css" rel="stylesheet">
         <link href="../../css/base.css" rel="stylesheet">
@@ -36,7 +36,7 @@
                             <li class="navitem">
                                 <a href="../.." class="nav-link">Home</a>
                             </li>
-                            <li class="dropdown">
+                            <li class="dropdown active">
                                 <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Infrastructure <b class="caret"></b></a>
                                 <ul class="dropdown-menu">
                                     
@@ -69,7 +69,7 @@
 </li>
             
 <li>
-    <a href="../../gorilla/gorilla/" class="dropdown-item">gorilla</a>
+    <a href="./" class="dropdown-item active">gorilla</a>
 </li>
             
 <li>
@@ -168,7 +168,7 @@
   </li>
                                 </ul>
                             </li>
-                            <li class="dropdown active">
+                            <li class="dropdown">
                                 <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Advertisement <b class="caret"></b></a>
                                 <ul class="dropdown-menu">
                                     
@@ -177,7 +177,7 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="./" class="dropdown-item active">predicting-clicks</a>
+    <a href="../../predicting-clicks/predicting-clicks/" class="dropdown-item">predicting-clicks</a>
 </li>
     </ul>
   </li>
@@ -192,17 +192,17 @@
                             </a>
                         </li>
                             <li class="nav-item">
-                                <a rel="prev" href="../../word2vec/word2vec/" class="nav-link">
+                                <a rel="prev" href="../../gfs/gfs/" class="nav-link">
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" class="nav-link disabled">
+                                <a rel="next" href="../../spanner/spanner/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="https://github.com/kophy/Notes/edit/master/docs/predicting-clicks/predicting-clicks.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
+                                <a href="https://github.com/kophy/Notes/edit/master/docs/gorilla/gorilla.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
                             </li>
                     </ul>
                 </div>
@@ -222,21 +222,17 @@
     <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
         <ul class="nav flex-column">
             
-            <li class="nav-item" data-level="1"><a href="#predicting-clicks-estimating-the-click-through-rate-for-new-ads" class="nav-link">Predicting Clicks: Estimating the Click-Through Rate for New Ads</a>
+            <li class="nav-item" data-level="1"><a href="#gorilla-a-fast-scalable-in-memory-time-series-database" class="nav-link">Gorilla: A Fast, Scalable, In-Memory Time Series Database</a>
               <ul class="nav flex-column">
-            <li class="nav-item" data-level="2"><a href="#background" class="nav-link">Background</a>
-              <ul class="nav flex-column">
-              </ul>
-            </li>
-            <li class="nav-item" data-level="2"><a href="#model-basics" class="nav-link">Model Basics</a>
+            <li class="nav-item" data-level="2"><a href="#introduction" class="nav-link">Introduction</a>
               <ul class="nav flex-column">
               </ul>
             </li>
-            <li class="nav-item" data-level="2"><a href="#features" class="nav-link">Features</a>
+            <li class="nav-item" data-level="2"><a href="#data-model-and-compression" class="nav-link">Data Model and Compression</a>
               <ul class="nav flex-column">
               </ul>
             </li>
-            <li class="nav-item" data-level="2"><a href="#others" class="nav-link">Others</a>
+            <li class="nav-item" data-level="2"><a href="#architecture" class="nav-link">Architecture</a>
               <ul class="nav flex-column">
               </ul>
             </li>
@@ -247,36 +243,42 @@
 </div></div>
                     <div class="col-md-9" role="main">
 
-<h1 id="predicting-clicks-estimating-the-click-through-rate-for-new-ads">Predicting Clicks: Estimating the Click-Through Rate for New Ads</h1>
-<p><em>Use features of ads, terms, and advertisers to learn a model that accurately predicts the click-though rate for new ads.</em></p>
-<h2 id="background">Background</h2>
+<h1 id="gorilla-a-fast-scalable-in-memory-time-series-database">Gorilla: A Fast, Scalable, In-Memory Time Series Database</h1>
+<p><em>Facebook's in-memory time series database for monitoring.</em></p>
+<h2 id="introduction">Introduction</h2>
 <ul>
-<li>The key task for a search engine advertising system is to determine what advertisements should be displayed, and in what order, for each query that the search engine receives. </li>
-<li>Assume the probability of an ad is clicked is independent of its position and the probability of an ad is viewed only depends on position. <script type="math/tex">P(click|ad,pos)=p(click|ad, seen) \cdot p(seen|pos)</script>. Then CTR is defined as <script type="math/tex">p(click|ad, seen)</script>.</li>
-<li>For ads that has been displayed enough times(up to 200-300 search pages), CTR can be estimated based on historical information, but this doesn't work for new ads.</li>
+<li>Gorilla functions as a write-through cache for most recent monitoring data written to a HBase datastore.</li>
+<li><strong>Key Insight:</strong> aggregate analysis is more important than individual data points; recent data points are more important than older ones.</li>
+<li>Gorilla optimizes for high read/write availability at the expense of possibly dropping data on the write path.</li>
 </ul>
-<h2 id="model-basics">Model Basics</h2>
+<h2 id="data-model-and-compression">Data Model and Compression</h2>
 <ul>
-<li>The goal is to create a model to predict initial CTR for new ads.</li>
-<li>Training and testing data is split on advertiser level, so we can consider each ad and account as completely novel to the system.</li>
-<li>Use Logistics regression and cross-entropy loss function.</li>
-<li>For each feature <script type="math/tex">f_i</script>, add derived features <script type="math/tex">log(f_i+1)</script> and <script type="math/tex">fi^2</script>. Feature values more than five standard deviations from the mean are truncated.</li>
-</ul>
-<h2 id="features">Features</h2>
-<ul>
-<li>Term CTR: the CTR of other ads with same or related bid terms.</li>
-<li>Ad quality feature set<ul>
-<li>manual features: appearance, attention capture, reputation, landing page quality, relevance.</li>
-<li>unigram features: one-hot encoding of most common 10K words in ad title and body.</li>
+<li>Each monitoring data point is a 3-tuple of a string key (time series identifier), an int64 timestamp and a double value.</li>
+<li>Gorilla compresses data points within a time series. Timestamps are values are compressed separately.<ul>
+<li>For timestamps, since most data points arrive at a fixed interval, Gorilla encodes delta-of-deltas with variable length encoding.</li>
+<li>For values, since most data points don't change significantly when compared to neighbors, Gorilla encodes XOR'd values with variable length encoding.</li>
 </ul>
 </li>
-<li>Order specificity feature set: capture how targeted an order with the category entropy of bid terms.</li>
-<li>Search data feature set: the approximate frequency of bid term occurring on the Web and users query for the bid term.</li>
+<li>Time series datasets are sharded by keys. A Gorilla node will own multiple shards (shared-nothing, horizontal scaling).</li>
 </ul>
-<h2 id="others">Others</h2>
+<h2 id="architecture">Architecture</h2>
+<h3 id="in-memory">In-Memory</h3>
 <ul>
-<li>Although there is overlapping between features, we want to Include as many feature sets as possible for robustness in adversarial situations.</li>
-<li>Improvements: making the CTR estimation dependent on user query, adding human judges as new source of information, making the model time-dependent.</li>
+<li>A node stores the mappings of <script type="math/tex">shard\_id \rightarrow(name\rightarrow time\_series)</script>​.</li>
+<li>A time series data structure has a sequence of immutable closed blocks for old data and one append-only open block for most recent data. When requested, the data blocks are returned without decompression via RPCs.</li>
+<li>Concurrency is attained by per-shard read-write spin locks and per-time-series spin locks.</li>
+</ul>
+<h3 id="on-disk">On-Disk</h3>
+<ul>
+<li>For each shard, the node stores an append-only log and complete block files for checkpointing in a directory.</li>
+<li>The log file is not WAL -- data is buffered up to 64MB before being flushed. Gorilla trades off potential data loss for higher availability for writes.</li>
+<li>Data is persisted on a distributed file system with replication.</li>
+</ul>
+<h3 id="handling-failures">Handling Failures</h3>
+<ul>
+<li>Gorilla maintains two hosts in separate geographical regions with fail-over. On a write, data is streamed to each host without attempt to guarantee consistency.</li>
+<li>Within a region, a Paxos-based ShardMaster assigns shards to nodes and move shards when a node fails. During shard reassignment, the write clients buffer up to 1 minute of most recent data points and discard older ones.</li>
+<li>For incomplete data, Gorilla returns partial results and lets caller decide how to proceed.</li>
 </ul></div>
             </div>
         </div>
