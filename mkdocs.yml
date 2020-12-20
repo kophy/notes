@@ -2,7 +2,7 @@ site_name: kophy's notes
 repo_url: https://github.com/kophy/Notes
 
 theme:
-  name: 'sandstone'
+  name: "sandstone"
 
 extra_javascript:
     - 'https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML'
