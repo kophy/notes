@@ -8,7 +8,7 @@
         
         
         <link rel="shortcut icon" href="../../img/favicon.ico">
-        <title>mapreduce - kophy's notes</title>
+        <title>snowflake - kophy's notes</title>
         <link href="../../css/bootstrap.min.css" rel="stylesheet">
         <link href="../../css/font-awesome.min.css" rel="stylesheet">
         <link href="../../css/base.css" rel="stylesheet">
@@ -73,7 +73,7 @@
 </li>
             
 <li>
-    <a href="../../snowflake/snowflake/" class="dropdown-item">snowflake</a>
+    <a href="./" class="dropdown-item active">snowflake</a>
 </li>
             
 <li>
@@ -91,7 +91,7 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="./" class="dropdown-item active">mapreduce</a>
+    <a href="../../mapreduce/mapreduce/" class="dropdown-item">mapreduce</a>
 </li>
             
 <li>
@@ -196,17 +196,17 @@
                             </a>
                         </li>
                             <li class="nav-item">
-                                <a rel="prev" href="../../tao/tao/" class="nav-link">
+                                <a rel="prev" href="../../gorilla/gorilla/" class="nav-link">
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../../flink/flink/" class="nav-link">
+                                <a rel="next" href="../../spanner/spanner/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="https://github.com/kophy/Notes/edit/master/docs/mapreduce/mapreduce.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
+                                <a href="https://github.com/kophy/Notes/edit/master/docs/snowflake/snowflake.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
                             </li>
                     </ul>
                 </div>
@@ -226,21 +226,17 @@
     <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
         <ul class="nav flex-column">
             
-            <li class="nav-item" data-level="1"><a href="#mapreduce-simplified-data-processing-on-large-clusters" class="nav-link">MapReduce: Simplified Data Processing on Large Clusters</a>
+            <li class="nav-item" data-level="1"><a href="#the-snowflake-elastic-data-warehouse" class="nav-link">The Snowflake Elastic Data Warehouse</a>
               <ul class="nav flex-column">
-            <li class="nav-item" data-level="2"><a href="#introduction" class="nav-link">Introduction</a>
-              <ul class="nav flex-column">
-              </ul>
-            </li>
-            <li class="nav-item" data-level="2"><a href="#execution" class="nav-link">Execution</a>
+            <li class="nav-item" data-level="2"><a href="#background" class="nav-link">Background</a>
               <ul class="nav flex-column">
               </ul>
             </li>
-            <li class="nav-item" data-level="2"><a href="#fault-tolerance" class="nav-link">Fault Tolerance</a>
+            <li class="nav-item" data-level="2"><a href="#architecture" class="nav-link">Architecture</a>
               <ul class="nav flex-column">
               </ul>
             </li>
-            <li class="nav-item" data-level="2"><a href="#miscellaneous" class="nav-link">Miscellaneous</a>
+            <li class="nav-item" data-level="2"><a href="#feature-highlights" class="nav-link">Feature Highlights</a>
               <ul class="nav flex-column">
               </ul>
             </li>
@@ -251,32 +247,37 @@
 </div></div>
                     <div class="col-md-9" role="main">
 
-<h1 id="mapreduce-simplified-data-processing-on-large-clusters">MapReduce: Simplified Data Processing on Large Clusters</h1>
-<p><em>A programming model and an associated implementation for processing and generating large data sets.</em></p>
-<h2 id="introduction">Introduction</h2>
+<h1 id="the-snowflake-elastic-data-warehouse">The Snowflake Elastic Data Warehouse</h1>
+<p><em>An enterprise-ready data warehousing solution for the cloud.</em></p>
+<h2 id="background">Background</h2>
 <ul>
-<li>Many computation tasks are conceptually straightforward, but given the size of input data, the computations have to be distributed across machines to finish in a reasonable amount of time.</li>
-<li>MapReduce is an abstraction that can express many computation tasks while hiding details of parallelization, fault-tolerance, data distribution and load balancing.</li>
-<li>Users specify a map function that processes a key/value pair to generate a set of intermediate key/value pairs, and a reduce function that merges all intermediate values associated with the same intermediate key.</li>
+<li>Traditional data warehousing solutions are not able to leverage the cloud's elasticity and struggle with semi-structure data and unpredictable workloads.</li>
+<li>Big data platforms like Hadoop/Spark require significant engineering work to use.</li>
 </ul>
-<h2 id="execution">Execution</h2>
+<h2 id="architecture">Architecture</h2>
 <ul>
-<li>A single master assigns tasks to workers; there are M map tasks and R reduce tasks in total.</li>
-<li>For map task, worker reads input, applies user-defined Map function and periodically writes intermediate results buffered in memory to local disk.</li>
-<li>For reduce task, worker uses rpcs to read intermediate results on map workers' local disks, sorts intermediate results to group occurrences of the same key, applies user-defined Reduce function and writes final results to a global file system.</li>
-<li>Master is responsible of propagating the locations of intermediate files from map tasks to reduce tasks.</li>
+<li>Pure shared-nothing architecture tightly couples compute and storage resources, so it cannot well handle heterogenous workloads (I/O bandwidth vs compute), frequent membership changes (data has to be reshuffled) and online upgrades. </li>
+<li>Snowflake uses the <em>multi-cluster, shared-data</em> architecture, which separates storage and compute into loosely-coupled, independently scalable services:<ul>
+<li><strong>Data storage</strong> stores table data, query temp data and results in S3. Tables are horizontally partitioned into large, immutable files in PAX format (S3 allows GET requests over parts of files, so virtual warehouses only needs to download the file headers and interested columns).</li>
+<li><strong>Virtual warehouse</strong> consists of a cluster of EC2 machines. Each worker node spawns processes to run queries and maintains a disk-based LRU cache for table data.<ul>
+<li>To improve hit rate and avoid redundant caching, the query optimizer assigns input files to worker nodes with consistent hashing (when membership changes, data shuffling is done lazily via cache replacement).</li>
+<li>The execution engine is columnar, vectorized and push-based.</li>
+<li>Snowflake uses file stealing to handle straggler nodes. </li>
 </ul>
-<p><img alt="execution" src="../images/execution.jpg" /></p>
-<h2 id="fault-tolerance">Fault Tolerance</h2>
-<ul>
-<li>For worker failure, master periodically pings workers and marks the worker that has no response for a certain amount of time as failed. Completed map tasks and any in-progress tasks on that worker are rescheduled to other workers; no need to re-execute completed reduce tasks because output is stored in global file system instead of worker's local disk.</li>
-<li>For master failure, the computation is just aborted and it is client's responsibility to check and retry.</li>
+</li>
+<li><strong>Cloud services</strong> (access control, query optimizer, transaction manager, etc) are stateless and shared between users. Metadata (table schemas, mappings between tables to S3 files, etc) is stored in a global key-value store.</li>
 </ul>
-<h2 id="miscellaneous">Miscellaneous</h2>
+</li>
+<li>Instead of indices, Snowflake uses min-max based pruning (the system maintains data distribution information for data chunks) to access only relevant data chunks.</li>
+</ul>
+<p><img alt="architecture" src="../images/architecture.png" /></p>
+<h2 id="feature-highlights">Feature Highlights</h2>
 <ul>
-<li><strong>Locality:</strong> master attempts to schedule map tasks on or close to the machines that contains corresponding input data(input data managed by GFS is also stored in the cluster).</li>
-<li><strong>Task granularity:</strong> ideally M and R should be large to improve load balancing and speed up failure recovery, but there are practical bounds since master needs to keep <script type="math/tex">O(M\times R)</script> states in memory and each reduce task produces a separate output file.</li>
-<li><strong>Backup tasks:</strong> when the MapReduce is close to completion, master schedules backup executions for remaining in-progress tasks to alleviate the problem of stragglers.</li>
+<li>Snowflake provides a pure SAAS experience; no tuning knobs, no physical design, etc.</li>
+<li>Snowflake uses techniques like replication, stateless services and metadata mapping layer to ensure continuous availability.</li>
+<li>For semi-structured data, Snowflake performs automatic type inference via statistical analysis. To optimize query performance for complex paths, Snowflake keeps bloom filters for paths (not values!) present in a data chunk.</li>
+<li>Time travel and cloning can be efficiently implemented since Snowflake uses multi-version concurrency control (MVCC).</li>
+<li>Snowflake provides a hierarchy key model and uses key rotation and rekeying to ensure standardized life cycles.</li>
 </ul></div>
             </div>
         </div>
