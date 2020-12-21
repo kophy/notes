@@ -1,11 +1,11 @@
 ## About the Site
 
-This site are my notes when reading papers. Since I only write down important or interesting parts (for me),  they may not be good summaries of the papers.
+This site contains my notes when reading papers. As I only write down important or interesting parts for me,  they may not be good summaries of the papers.
 
 ## Fields of Interest
 
-I‘m mainly interested in data systems and applied machien learning.  
-Occasionally, I will also read papers from other fields.
+I‘m mainly interested in large-scale data systems and applied machien learning.  
+Occasionally, I also read papers from other fields.
 
 ---
 
