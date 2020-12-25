@@ -23,6 +23,7 @@ pages:
         - f1: 'f1/f1.md'
         - gfs: 'gfs/gfs.md'
         - gorilla: 'gorilla/gorilla.md'
+        - mongodb: 'mongodb/mongodb.md'
         - snowflake: 'snowflake/snowflake.md'
         - spanner: 'spanner/spanner.md'
         - tao: 'tao/tao.md'
