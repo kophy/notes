@@ -1,2 +1,2 @@
 # Notes
-Personal Notes of papers.
+Personal notes of papers.

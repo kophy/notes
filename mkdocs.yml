@@ -27,7 +27,7 @@ pages:
         - snowflake: 'snowflake/snowflake.md'
         - spanner: 'spanner/spanner.md'
         - tao: 'tao/tao.md'
-      - Data Processing:
+      - Compute:
         - mapreduce: 'mapreduce/mapreduce.md'
         - flink: 'flink/flink.md'
         - flume: 'flume/flume.md'
