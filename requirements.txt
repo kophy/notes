@@ -17,7 +17,7 @@ mkdocs-bootswatch==1.1
 mkdocs-material==4.4.2
 mkdocs-minify-plugin==0.2.1
 mkdocs-windmill==1.0.4
-nltk==3.5
+nltk==3.6.5
 pep562==1.0
 Pygments==2.7.4
 pymdown-extensions==6.1
